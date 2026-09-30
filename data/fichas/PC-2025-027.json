@@ -1,0 +1,173 @@
+{
+  "codigo_proyecto": "PC-2025-027",
+  "titulo": "Mejora de la Efectividad Global de los Equipos (OEE) en la planta de Durán",
+  "cliente": "Plásticos del Pacífico S.A.",
+  "descripcion_cliente": "fabricante de envases y tapas plásticas para la industria de alimentos y bebidas",
+  "sector": "Manufactura",
+  "subsector": "plásticos y envases",
+  "ubicacion": "Planta industrial de Durán, provincia del Guayas",
+  "fecha_inicio": "2025-07-07",
+  "fecha_fin": "2025-12-12",
+  "duracion_semanas": 23,
+  "fecha_aceptacion": "2025-12-19",
+  "estado": "Cerrado",
+  "gerente_proyecto": "Ing. Martín Aguirre",
+  "equipo_consultor": "1 gerente, 1 consultor senior en TPM, 2 consultores, 1 analista de datos",
+  "tamano_equipo": 5,
+  "contraparte_cliente": "Gerencia de Planta y Jefatura de Mantenimiento",
+  "problema": "Plásticos del Pacífico necesitaba aumentar su capacidad productiva para atender nuevos contratos sin invertir en una máquina adicional. La Línea 1 de inyección, que concentra el 60% del volumen, presentaba el OEE más bajo y largas paradas por diversas causas, con registros manuales incompletos.",
+  "resumen": "El proyecto se enfocó en recuperar capacidad oculta en la Línea 1 de inyección. Mediante la aplicación de Mantenimiento Productivo Total (TPM), reducción de tiempos de cambio de formato (SMED) y un sistema de gestión diaria de paradas, el OEE de la Línea 1 pasó de 58% a 71%. Esta mejora equivale a una capacidad adicional aproximada de 1,9 millones de tapas al mes, suficiente para cubrir los nuevos contratos sin inversión en equipos.",
+  "objetivos": [
+    "Incrementar el OEE de la Línea 1 de inyección de 58% a al menos 70%.",
+    "Reducir el tiempo promedio de cambio de formato en al menos 50%.",
+    "Reducir las horas mensuales de paradas no programadas en al menos 40%.",
+    "Implementar un sistema de registro y gestión diaria de paradas sostenible por el equipo de planta."
+  ],
+  "alcance": "El alcance del proyecto se limitó a la Línea 1 de inyección. La Línea 2 de soplado, la gestión de inventarios de materia prima y la programación de la producción quedaron expresamente fuera del alcance.",
+  "metodologias": [
+    "Mantenimiento Productivo Total (TPM)",
+    "SMED",
+    "Gestión diaria de paradas",
+    "Análisis de Pareto",
+    "Estudio de tiempos",
+    "Mantenimiento autónomo",
+    "Mantenimiento preventivo"
+  ],
+  "iniciativas": [
+    "Reducción de tiempos de cambio de formato (SMED) mediante estandarización de carros, implementación de conexiones rápidas y definición de secuencia estándar con tiempos objetivo.",
+    "Mantenimiento autónomo y preventivo con limpieza e inspección inicial en cada inyectora, corrección de anomalías, tareas diarias de operadores y reorganización del plan preventivo.",
+    "Gestión diaria de paradas reemplazando el registro manual por registro en tablet, con una lista cerrada de causas y reuniones diarias de 15 minutos.",
+    "Mejoras en alimentación de material mediante instalación de tolvas con sensores de nivel y modificación de la secuencia de secado de resina."
+  ],
+  "indicadores": [
+    {
+      "nombre": "Disponibilidad",
+      "unidad": "%",
+      "linea_base": "72%",
+      "meta": null,
+      "resultado": "82%",
+      "variacion": "+10 pp",
+      "linea_base_valor": 72.0,
+      "resultado_valor": 82.0,
+      "estado_meta": "sin_meta",
+      "notas": "Corresponde exclusivamente a la Línea 1 de inyección. La línea base es el promedio de las semanas 2 a 4 del proyecto (julio de 2025) y el resultado es el promedio de las semanas 20 a 23 (noviembre y diciembre de 2025)."
+    },
+    {
+      "nombre": "Rendimiento",
+      "unidad": "%",
+      "linea_base": "86%",
+      "meta": null,
+      "resultado": "91%",
+      "variacion": "+5 pp",
+      "linea_base_valor": 86.0,
+      "resultado_valor": 91.0,
+      "estado_meta": "sin_meta",
+      "notas": "Corresponde exclusivamente a la Línea 1 de inyección. La línea base es el promedio de las semanas 2 a 4 del proyecto (julio de 2025) y el resultado es el promedio de las semanas 20 a 23 (noviembre y diciembre de 2025)."
+    },
+    {
+      "nombre": "Calidad",
+      "unidad": "%",
+      "linea_base": "94%",
+      "meta": null,
+      "resultado": "95%",
+      "variacion": "+1 pp",
+      "linea_base_valor": 94.0,
+      "resultado_valor": 95.0,
+      "estado_meta": "sin_meta",
+      "notas": "Corresponde exclusivamente a la Línea 1 de inyección. La línea base es el promedio de las semanas 2 a 4 del proyecto (julio de 2025) y el resultado es el promedio de las semanas 20 a 23 (noviembre y diciembre de 2025)."
+    },
+    {
+      "nombre": "OEE",
+      "unidad": "%",
+      "linea_base": "58%",
+      "meta": "al menos 70%",
+      "resultado": "71%",
+      "variacion": "+13 pp",
+      "linea_base_valor": 58.0,
+      "resultado_valor": 71.0,
+      "estado_meta": "cumplida",
+      "notas": "Corresponde exclusivamente a la Línea 1 de inyección. La línea base es el promedio de las semanas 2 a 4 del proyecto (julio de 2025) y el resultado es el promedio de las semanas 20 a 23 (noviembre y diciembre de 2025)."
+    },
+    {
+      "nombre": "Tiempo promedio de cambio de formato",
+      "unidad": "min",
+      "linea_base": "95 min",
+      "meta": "≤ 48 min",
+      "resultado": "38 min",
+      "variacion": "-60%",
+      "linea_base_valor": 95.0,
+      "resultado_valor": 38.0,
+      "estado_meta": "cumplida",
+      "notas": "Corresponde exclusivamente a la Línea 1 de inyección. La línea base es el promedio de las semanas 2 a 4 del proyecto (julio de 2025) y el resultado es el promedio de las semanas 20 a 23 (noviembre y diciembre de 2025)."
+    },
+    {
+      "nombre": "Paradas no programadas",
+      "unidad": "h/mes",
+      "linea_base": "64 h/mes",
+      "meta": "≤ 38 h/mes",
+      "resultado": "31 h/mes",
+      "variacion": "-52%",
+      "linea_base_valor": 64.0,
+      "resultado_valor": 31.0,
+      "estado_meta": "cumplida",
+      "notas": "Corresponde exclusivamente a la Línea 1 de inyección. La línea base es el promedio de las semanas 2 a 4 del proyecto (julio de 2025) y el resultado es el promedio de las semanas 20 a 23 (noviembre y diciembre de 2025)."
+    },
+    {
+      "nombre": "Tasa de desperdicio (scrap)",
+      "unidad": "%",
+      "linea_base": "6,0%",
+      "meta": "sin meta",
+      "resultado": "5,0%",
+      "variacion": "-1 pp",
+      "linea_base_valor": 6.0,
+      "resultado_valor": 5.0,
+      "estado_meta": "sin_meta",
+      "notas": "Corresponde exclusivamente a la Línea 1 de inyección. La línea base es el promedio de las semanas 2 a 4 del proyecto (julio de 2025) y el resultado es el promedio de las semanas 20 a 23 (noviembre y diciembre de 2025)."
+    }
+  ],
+  "objetivos_cumplidos": 4,
+  "objetivos_totales": 4,
+  "lecciones": [
+    {
+      "titulo": "La resistencia al cambio se concentró en los mandos medios.",
+      "descripcion": "Los supervisores de turno veían el registro detallado de paradas como un mecanismo de control sobre su desempeño. La situación cambió cuando se les dio la responsabilidad de conducir la reunión diaria y de proponer las acciones, en lugar de solo reportar."
+    },
+    {
+      "titulo": "Sin datos confiables no hay mejora sostenible.",
+      "descripcion": "El registro manual subestimaba las paradas en cerca de un 40%. Invertir las primeras semanas en medir bien evitó atacar causas equivocadas."
+    },
+    {
+      "titulo": "SMED genera resultados rápidos y visibles.",
+      "descripcion": "Empezar por los cambios de formato permitió mostrar resultados en el primer mes de implementación y ganar credibilidad en planta."
+    }
+  ],
+  "recomendaciones": [
+    "Replicar el modelo de gestión diaria y mantenimiento autónomo en la Línea 2 una vez concluido el reemplazo de las sopladoras, previsto para el primer semestre de 2026.",
+    "Revisar la programación de producción para agrupar pedidos por molde y reducir el número de cambios de formato por semana.",
+    "Evaluar la conexión automática de las inyectoras al sistema de registro para eliminar la digitación manual de paradas.",
+    "Realizar una auditoría de sostenibilidad a los seis meses del cierre."
+  ],
+  "salvedades": [
+    {
+      "tipo": "fuera_de_alcance",
+      "descripcion": "El proyecto se limitó a la Línea 1 de inyección; la Línea 2 de soplado quedó expresamente fuera de alcance."
+    },
+    {
+      "tipo": "fuera_de_alcance",
+      "descripcion": "Ninguna de las cifras de resultados de este informe corresponde a la Línea 2 ni a la planta en su conjunto."
+    },
+    {
+      "tipo": "resultado_no_atribuible",
+      "descripcion": "El OEE de la Línea 2 (63%) no es atribuible al proyecto, ya que esta línea quedó fuera del alcance de la intervención."
+    },
+    {
+      "tipo": "dato_no_validado",
+      "descripcion": "La metodología de cálculo del OEE de la Línea 2 (63%) no fue validada por Procesa Consultores."
+    },
+    {
+      "tipo": "fuera_de_alcance",
+      "descripcion": "La gestión de inventarios de materia prima y la programación de la producción quedaron fuera del alcance del proyecto."
+    }
+  ],
+  "archivo_fuente": "Informe_Cierre_PC-2025-027_Plasticos_del_Pacifico.pdf"
+}

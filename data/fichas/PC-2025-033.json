@@ -1,0 +1,128 @@
+{
+  "codigo_proyecto": "PC-2025-033",
+  "titulo": "Reducción de tiempos de admisión y espera en consulta externa",
+  "cliente": "Clínica Santa Lucía del Valle",
+  "descripcion_cliente": "clínica privada de especialidades con 38 consultorios y 60 camas",
+  "sector": "Salud",
+  "subsector": "clínicas y hospitales privados",
+  "ubicacion": "Valle de los Chillos, Quito",
+  "fecha_inicio": "2025-10-06",
+  "fecha_fin": "2026-02-27",
+  "duracion_semanas": 21,
+  "fecha_aceptacion": "2026-03-06",
+  "estado": "Cerrado",
+  "gerente_proyecto": "Ing. Martín Aguirre",
+  "equipo_consultor": "1 gerente, 1 consultora senior en procesos de salud, 1 consultor, 1 analista de datos",
+  "tamano_equipo": 4,
+  "contraparte_cliente": "Dirección Médica y Jefatura de Admisiones",
+  "problema": "La Clínica Santa Lucía del Valle recibía un número creciente de quejas por tiempos de espera en consulta externa, que se habían convertido en el principal motivo de insatisfacción en sus encuestas. El proceso de admisión era el principal cuello de botella.",
+  "resumen": "El proyecto rediseñó el agendamiento, implementó la pre-admisión digital y reorganizó las ventanillas de admisión. Se logró reducir el tiempo de espera promedio de los pacientes en un 24% (de 52 a 39,5 min) y el tiempo de admisión en un 57% (de 14 a 6 min). La satisfacción de los pacientes, medida mediante NPS, pasó de 18 a 37.",
+  "objetivos": [
+    "Reducir el tiempo total de espera del paciente, desde su llegada hasta el ingreso al consultorio, en al menos 20%.",
+    "Reducir el tiempo de admisión en ventanilla a menos de 8 minutos.",
+    "Lograr que al menos 30% de los pacientes realice su pre-admisión en línea.",
+    "Reducir el ausentismo de citas por debajo del 18%."
+  ],
+  "alcance": "El proyecto abarcó la consulta externa en todas sus especialidades. Los servicios de emergencia, hospitalización e imagenología quedaron fuera del alcance. El desarrollo del formulario de pre-admisión en línea fue realizado por el proveedor del sistema hospitalario del cliente, con base en el diseño funcional elaborado por el equipo consultor.",
+  "metodologias": [
+    "Lean",
+    "análisis de colas"
+  ],
+  "iniciativas": [
+    "Agenda diferenciada por especialidad",
+    "Pre-admisión digital",
+    "Reorganización de ventanillas",
+    "Recordatorios y confirmación de citas"
+  ],
+  "indicadores": [
+    {
+      "nombre": "Tiempo total de espera del paciente",
+      "unidad": "min",
+      "linea_base": "52 min",
+      "meta": "reducción ≥ 20%",
+      "resultado": "39,5 min",
+      "variacion": "-24%",
+      "linea_base_valor": 52.0,
+      "resultado_valor": 39.5,
+      "estado_meta": "cumplida",
+      "notas": "La medición final incluye la temporada de mayor demanda por el inicio del año escolar. El tiempo de espera muestra mayor variabilidad en traumatología y dermatología, donde la demanda supera la capacidad de consultorios en horario de la mañana."
+    },
+    {
+      "nombre": "Tiempo de admisión en ventanilla",
+      "unidad": "min",
+      "linea_base": "14 min",
+      "meta": "< 8 min",
+      "resultado": "6 min",
+      "variacion": "-57%",
+      "linea_base_valor": 14.0,
+      "resultado_valor": 6.0,
+      "estado_meta": "cumplida",
+      "notas": null
+    },
+    {
+      "nombre": "Pacientes con pre-admisión digital",
+      "unidad": "%",
+      "linea_base": "0%",
+      "meta": "≥ 30%",
+      "resultado": "41%",
+      "variacion": "+41 pp",
+      "linea_base_valor": 0.0,
+      "resultado_valor": 41.0,
+      "estado_meta": "cumplida",
+      "notas": null
+    },
+    {
+      "nombre": "Ausentismo de citas",
+      "unidad": "%",
+      "linea_base": "22%",
+      "meta": "< 18%",
+      "resultado": "15%",
+      "variacion": "-7 pp",
+      "linea_base_valor": 22.0,
+      "resultado_valor": 15.0,
+      "estado_meta": "cumplida",
+      "notas": null
+    },
+    {
+      "nombre": "Satisfacción del paciente (NPS)",
+      "unidad": "puntos",
+      "linea_base": "18",
+      "meta": "sin meta",
+      "resultado": "37",
+      "variacion": "+19 puntos",
+      "linea_base_valor": 18.0,
+      "resultado_valor": 37.0,
+      "estado_meta": "sin_meta",
+      "notas": null
+    }
+  ],
+  "objetivos_cumplidos": 4,
+  "objetivos_totales": 4,
+  "lecciones": [
+    {
+      "titulo": "Involucrar a los médicos desde el diagnóstico.",
+      "descripcion": "El rediseño de la agenda generó inicialmente rechazo de algunos especialistas. Presentarles los tiempos reales de sus propias consultas, medidos en el diagnóstico, facilitó el acuerdo sobre los nuevos bloques."
+    },
+    {
+      "titulo": "La medición manual de tiempos tiene límites.",
+      "descripcion": "El seguimiento presencial de pacientes es costoso y difícil de repetir. Se recomendó al cliente registrar automáticamente las marcas de tiempo de llegada, admisión e ingreso a consulta para dar seguimiento continuo."
+    },
+    {
+      "titulo": "La adopción digital requiere acompañamiento.",
+      "descripcion": "La pre-admisión creció de forma sostenida solo después de ubicar personal de apoyo en la entrada durante las primeras semanas para guiar a los pacientes."
+    }
+  ],
+  "recomendaciones": [
+    "Implementar el registro automático de marcas de tiempo en el sistema hospitalario para medir la espera de forma continua.",
+    "Evaluar la ampliación de horarios o consultorios en traumatología y dermatología.",
+    "Extender el modelo de pre-admisión a imagenología y laboratorio.",
+    "Establecer una meta de pre-admisión digital de 60% para el cierre de 2026."
+  ],
+  "salvedades": [
+    {
+      "tipo": "dato_no_oficial",
+      "descripcion": "La medición preliminar de diciembre de 2025 para el 'Tiempo total de espera del paciente' arrojó una reducción del 30%, que no es el dato oficial de cierre del proyecto."
+    }
+  ],
+  "archivo_fuente": "Informe_Cierre_PC-2025-033_Clinica_Santa_Lucia.pdf"
+}

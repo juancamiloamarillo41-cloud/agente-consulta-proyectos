@@ -1,0 +1,136 @@
+{
+  "codigo_proyecto": "PC-2026-006",
+  "titulo": "Optimización del proceso de reposición de inventario en tiendas",
+  "cliente": "Supermercados La Canasta Cía. Ltda.",
+  "descripcion_cliente": "Cadena de 14 supermercados en Pichincha, Imbabura y Cotopaxi",
+  "sector": "Retail",
+  "subsector": "Supermercados",
+  "ubicacion": "Pichincha, Imbabura y Cotopaxi",
+  "fecha_inicio": "2026-03-02",
+  "fecha_fin": "2026-08-21",
+  "duracion_semanas": 25,
+  "fecha_aceptacion": "2026-08-28",
+  "estado": "Cerrado con pendientes",
+  "gerente_proyecto": "Ing. Daniela Cevallos",
+  "equipo_consultor": "1 gerente, 1 consultor senior en cadena de suministro, 1 consultor, 1 analista de datos",
+  "tamano_equipo": 4,
+  "contraparte_cliente": "Gerencia de Operaciones y Jefatura de Compras",
+  "problema": "La Canasta presentaba altos niveles de quiebre de stock en productos clave y exceso de inventario en bodega. La reposición se basaba en el criterio subjetivo de administradores y el registro de órdenes era manual mediante hojas de cálculo.",
+  "resumen": "Se implementó un modelo de gestión basado en clasificación ABC y parámetros de punto de pedido para 14 tiendas. El proyecto logró reducir el quiebre de stock en productos categoría A a un 4,8% y disminuyó la merma de perecibles en 0,7 puntos porcentuales. La integración automática de órdenes de compra no se completó y fue trasladada a una fase posterior.",
+  "objetivos": [
+    "Reducir el quiebre de stock en productos de categoría A",
+    "Reducir los días de inventario en tienda",
+    "Integrar automáticamente las órdenes de compra con los tres principales proveedores",
+    "Reducir la merma de productos perecibles"
+  ],
+  "alcance": "Cobertura en los 14 locales tras un piloto inicial. El centro de distribución quedó fuera del alcance, excepto en tiempos de despacho.",
+  "metodologias": [
+    "Clasificación ABC",
+    "Punto de pedido",
+    "Stock de seguridad",
+    "Planificación de demanda",
+    "Conteos cíclicos",
+    "Especificación funcional"
+  ],
+  "iniciativas": [
+    "Implementación de parámetros de reposición (punto de pedido y stock de seguridad) para categorías A y B",
+    "Establecimiento de proceso semanal de planificación de demanda",
+    "Ejecución de conteos cíclicos semanales",
+    "Especificación funcional para intercambio electrónico de órdenes de compra"
+  ],
+  "indicadores": [
+    {
+      "nombre": "Quiebre de stock, categoría A",
+      "unidad": "%",
+      "linea_base": "9,5%",
+      "meta": "≤ 5%",
+      "resultado": "4,8%",
+      "variacion": null,
+      "linea_base_valor": null,
+      "resultado_valor": null,
+      "estado_meta": "cumplida",
+      "notas": "Promedio de julio y agosto de 2026 en los 14 locales."
+    },
+    {
+      "nombre": "Días de inventario en tienda",
+      "unidad": "días",
+      "linea_base": "38",
+      "meta": "≤ 30",
+      "resultado": "31",
+      "variacion": null,
+      "linea_base_valor": null,
+      "resultado_valor": null,
+      "estado_meta": "parcialmente_cumplida",
+      "notas": "Excluyendo la categoría de licores el resultado sería 29 días."
+    },
+    {
+      "nombre": "Integración de órdenes con proveedores",
+      "unidad": "de 3",
+      "linea_base": "0",
+      "meta": "3",
+      "resultado": "0",
+      "variacion": null,
+      "linea_base_valor": null,
+      "resultado_valor": null,
+      "estado_meta": "no_cumplida",
+      "notas": null
+    },
+    {
+      "nombre": "Merma de perecibles",
+      "unidad": "%",
+      "linea_base": "4,1%",
+      "meta": "reducción ≥ 0,5 pp",
+      "resultado": "3,4%",
+      "variacion": "-0,7 pp",
+      "linea_base_valor": null,
+      "resultado_valor": null,
+      "estado_meta": "cumplida",
+      "notas": null
+    },
+    {
+      "nombre": "Precisión de inventario en sistema",
+      "unidad": "%",
+      "linea_base": "78%",
+      "meta": null,
+      "resultado": "93%",
+      "variacion": null,
+      "linea_base_valor": null,
+      "resultado_valor": null,
+      "estado_meta": "sin_meta",
+      "notas": null
+    }
+  ],
+  "objetivos_cumplidos": 2,
+  "objetivos_totales": 4,
+  "lecciones": [
+    {
+      "titulo": "Los datos maestros son el cimiento",
+      "descripcion": "El 15% de los códigos presentaban errores en unidades de medida o factores de empaque, retrasando el plan original por tres semanas."
+    },
+    {
+      "titulo": "Las dependencias de terceros deben gestionarse desde el inicio",
+      "descripcion": "La integración técnica dependía de factores externos (actualización de ERP y capacidad técnica de proveedores) que no fueron validados previamente."
+    },
+    {
+      "titulo": "El administrador de tienda es clave",
+      "descripcion": "La participación activa de los administradores en el diseño de parámetros facilitó la adopción del nuevo modelo."
+    }
+  ],
+  "recomendaciones": [
+    "Ejecutar la segunda fase de integración electrónica de órdenes de compra tras la actualización del ERP.",
+    "Extender los parámetros de reposición a los productos de categoría C con mayor rotación.",
+    "Mantener los conteos cíclicos semanales.",
+    "Revisar los parámetros de reposición de forma trimestral y antes de cada temporada alta."
+  ],
+  "salvedades": [
+    {
+      "tipo": "pendiente",
+      "descripcion": "La integración automática con proveedores fue trasladada a una segunda fase por falta de capacidad técnica en un proveedor y requerimiento de actualización del ERP."
+    },
+    {
+      "tipo": "documento_externo",
+      "descripcion": "El Informe de Diagnóstico de abril de 2026 contiene detalles sobre análisis por local y por proveedor que no fueron incluidos en este informe."
+    }
+  ],
+  "archivo_fuente": "Informe_Cierre_PC-2026-006_Supermercados_La_Canasta.pdf"
+}

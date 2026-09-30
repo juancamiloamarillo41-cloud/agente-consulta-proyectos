@@ -1,0 +1,71 @@
+"""Acceso al modelo de lenguaje (Google Gemini).
+
+Todo el contacto con el proveedor pasa por este módulo, para que cambiar de
+proveedor o de modelo no afecte al resto del código. Incluye:
+- reintentos con espera exponencial ante errores transitorios (503 por demanda,
+  429 por límite por minuto);
+- una cadena de modelos de respaldo: si un modelo agotó su cuota diaria, reintentar
+  no sirve y se pasa directamente al siguiente.
+"""
+
+from __future__ import annotations
+
+import os
+import time
+
+from dotenv import load_dotenv
+from google import genai
+from google.genai import errors, types
+
+from project_agent.config import ROOT_DIR
+
+DEFAULT_MODELS = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"]
+RETRYABLE_STATUS = {429, 500, 503, 504}
+MAX_ATTEMPTS_PER_MODEL = 4
+
+
+class LLMError(RuntimeError):
+    pass
+
+
+_client: genai.Client | None = None
+
+
+def get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        load_dotenv(ROOT_DIR / ".env")
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise LLMError("Falta GEMINI_API_KEY. Copia .env.example como .env y agrega tu clave.")
+        _client = genai.Client(api_key=api_key)
+    return _client
+
+
+def models_to_try() -> list[str]:
+    """Modelos en orden de preferencia. GEMINI_MODELS permite cambiarlos sin tocar código."""
+    load_dotenv(ROOT_DIR / ".env")
+    configured = os.getenv("GEMINI_MODELS")
+    return [m.strip() for m in configured.split(",") if m.strip()] if configured else DEFAULT_MODELS
+
+
+def _daily_quota_exhausted(exc: errors.APIError) -> bool:
+    return exc.code == 429 and "PerDay" in str(exc)
+
+
+def generate(contents, config: types.GenerateContentConfig) -> types.GenerateContentResponse:
+    """Llama al modelo con reintentos, recorriendo la cadena de respaldo si hace falta."""
+    client = get_client()
+    last_error: Exception | None = None
+    for model in models_to_try():
+        for attempt in range(MAX_ATTEMPTS_PER_MODEL):
+            try:
+                return client.models.generate_content(model=model, contents=contents, config=config)
+            except errors.APIError as exc:
+                last_error = exc
+                if exc.code not in RETRYABLE_STATUS:
+                    raise LLMError(f"Error del proveedor ({model}): {exc}") from exc
+                if _daily_quota_exhausted(exc):
+                    break  # siguiente modelo
+                time.sleep(min(5 * 2**attempt, 40))
+    raise LLMError(f"Ningún modelo respondió tras varios intentos. Último error: {last_error}")

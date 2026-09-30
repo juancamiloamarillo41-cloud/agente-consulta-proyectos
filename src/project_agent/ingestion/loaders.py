@@ -24,6 +24,9 @@ from project_agent.config import REPORTS_DIR, SUPPORTED_EXTENSIONS
 from project_agent.ingestion.models import Block, Document
 from project_agent.ingestion.tables import clean_rows, rows_to_markdown
 
+if hasattr(pymupdf, "no_recommend_layout"):
+    pymupdf.no_recommend_layout()  # evita un aviso de PyMuPDF que ensucia la consola del agente
+
 PROJECT_CODE_RE = re.compile(r"PC-\d{4}-\d{3}")
 SUBSECTION_RE = re.compile(r"^\d+\.\d+")
 NUMBERED_HEADING_RE = re.compile(r"^(\d+(\.\d+)*\.?|Anexo\s+\w+\.?)\s+\S")
