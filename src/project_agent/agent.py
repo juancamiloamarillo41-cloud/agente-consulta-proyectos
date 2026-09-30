@@ -28,7 +28,7 @@ FINAL_ANSWER_PROMPT = (
 SYSTEM_PROMPT = """\
 Eres el asistente de consulta de proyectos de Procesa Consultores. Respondes preguntas de consultores sobre los informes de cierre de proyectos anteriores.
 
-Proyectos disponibles (código · cliente · sector · informe):
+Proyectos disponibles (código · cliente · sector · informe) y sus salvedades, que debes tener presentes al responder sobre cada proyecto:
 {catalog}
 
 Herramientas:
@@ -40,8 +40,8 @@ Reglas obligatorias:
 1. Responde solo con información obtenida de las herramientas en esta conversación. Nunca uses conocimiento propio sobre los proyectos, los clientes ni el sector.
 2. Cita la fuente de cada dato con el nombre del archivo del informe, por ejemplo: (Informe_Cierre_PC-2025-014_Cooperativa_Horizonte_Andino.pdf, 5. Resultados). Incluye la sección solo si viene en un resultado de buscar_en_informes (campo seccion); los datos de consultar_fichas_sql se citan solo con el archivo (campo fuentes). Nunca inventes nombres ni números de sección.
 3. Si la información no está en los informes, dilo explícitamente ("Los informes no contienen información sobre ...") y no la supongas. Si solo tienes una parte, responde esa parte e indica qué falta. Antes de afirmar que un dato no está, haz una sola comprobación adicional con la otra herramienta o con otros términos (por ejemplo, la sección de Resultados o la tabla indicadores); si tampoco aparece, concluye que no está y no sigas buscando.
-4. Antes de reportar resultados de un proyecto, revisa sus salvedades (tabla salvedades o notas del informe): cifras preliminares frente a oficiales, alcance limitado (por ejemplo, una sola línea de producción), resultados no atribuibles al proyecto, datos no validados, pendientes y documentos externos no disponibles. Usa siempre la cifra oficial y menciona la salvedad relevante.
-5. No extrapoles ni generalices más allá de lo que dicen los informes. Si haces un cálculo simple (una suma, una diferencia), indícalo. Nunca atribuyas un valor a un indicador o concepto cuyo nombre no venga en la misma fila o fragmento: si una consulta SQL no trae la columna que identifica cada valor (por ejemplo, indicadores.nombre), repítela incluyéndola.
+4. Al reportar resultados de un proyecto, ten en cuenta sus salvedades (están en el catálogo de arriba; no hace falta consultarlas de nuevo) y las notas de los indicadores: cifras preliminares frente a oficiales, alcance limitado (por ejemplo, una sola línea de producción), resultados no atribuibles al proyecto, datos no validados, pendientes y documentos externos no disponibles. Usa siempre la cifra oficial y menciona la salvedad relevante. Las salvedades no son una sección del informe: cítalas solo con el archivo.
+5. No extrapoles ni generalices más allá de lo que dicen los informes. Si haces un cálculo simple (una suma, una diferencia), indícalo. No afirmes relaciones de causa y efecto que el informe no establezca. Al reportar alcances, exclusiones y salvedades, usa los mismos términos del informe, sin sinónimos. Nunca atribuyas un valor a un indicador o concepto cuyo nombre no venga en la misma fila o fragmento: si una consulta SQL no trae la columna que identifica cada valor (por ejemplo, indicadores.nombre), repítela incluyéndola.
 6. Si una herramienta devuelve error, corrige la llamada y vuelve a intentarlo.
 7. Responde en español, de forma breve y directa, y termina con una línea "Fuentes:" que liste solo los informes de los que tomaste datos (o "Fuentes: ninguna" si los informes no contienen la información).
 """
@@ -83,11 +83,24 @@ class Usage:
 
 
 def _project_catalog(tools: ReportTools) -> str:
-    result = run_readonly_query(
+    """Catálogo de proyectos con sus salvedades.
+
+    Las salvedades van en el prompt porque son lo que más errores evita (cifras preliminares,
+    alcance limitado...) y el modelo las consultaba en casi todas las preguntas: tenerlas siempre
+    presentes ahorra una llamada por pregunta. Con muchos proyectos habría que volver a consultarlas.
+    """
+    projects = run_readonly_query(
         "SELECT codigo_proyecto, cliente, sector, archivo_fuente FROM proyectos ORDER BY codigo_proyecto",
         tools.db_path,
     )
-    return "\n".join(" · ".join(str(value) for value in row) for row in result.rows)
+    caveats = run_readonly_query(
+        "SELECT codigo_proyecto, tipo, descripcion FROM salvedades ORDER BY codigo_proyecto, rowid", tools.db_path
+    )
+    lines = []
+    for row in projects.rows:
+        lines.append(" · ".join(str(value) for value in row))
+        lines.extend(f"    - [{tipo}] {descripcion}" for code, tipo, descripcion in caveats.rows if code == row[0])
+    return "\n".join(lines)
 
 
 class ProjectAgent:

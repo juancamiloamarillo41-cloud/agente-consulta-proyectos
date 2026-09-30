@@ -88,14 +88,17 @@ def _open_readonly(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
-def _project_sources(conn: sqlite3.Connection, codes: set[str]) -> dict[str, str]:
-    if not codes:
+def _project_sources(conn: sqlite3.Connection, codes: set[str], files: set[str]) -> dict[str, str]:
+    """Mapea codigo_proyecto -> archivo_fuente para los proyectos presentes en el resultado."""
+    if not codes and not files:
         return {}
     conn.set_authorizer(None)
-    placeholders = ",".join("?" * len(codes))
+    code_marks = ",".join("?" * len(codes)) or "NULL"
+    file_marks = ",".join("?" * len(files)) or "NULL"
     rows = conn.execute(
-        f"SELECT codigo_proyecto, archivo_fuente FROM proyectos WHERE codigo_proyecto IN ({placeholders})",
-        sorted(codes),
+        "SELECT codigo_proyecto, archivo_fuente FROM proyectos "
+        f"WHERE codigo_proyecto IN ({code_marks}) OR archivo_fuente IN ({file_marks})",
+        [*sorted(codes), *sorted(files)],
     ).fetchall()
     return dict(rows)
 
@@ -113,12 +116,15 @@ def run_readonly_query(sql: str, db_path: str | Path = DB_PATH, max_rows: int = 
         truncated = len(rows) > max_rows
         rows = rows[:max_rows]
 
-        # Para poder citar: si el resultado trae códigos de proyecto, se añade su informe fuente.
-        codes = set()
-        if "codigo_proyecto" in columns:
-            idx = columns.index("codigo_proyecto")
-            codes = {row[idx] for row in rows if row[idx]}
-        return QueryResult(columns, rows, truncated, _project_sources(conn, codes))
+        # Para poder citar: si el resultado identifica proyectos (por código o por archivo), se añade su informe.
+        def values(column: str) -> set[str]:
+            if column not in columns:
+                return set()
+            idx = columns.index(column)
+            return {row[idx] for row in rows if row[idx]}
+
+        sources = _project_sources(conn, values("codigo_proyecto"), values("archivo_fuente"))
+        return QueryResult(columns, rows, truncated, sources)
     finally:
         conn.close()
 

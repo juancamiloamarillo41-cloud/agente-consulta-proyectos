@@ -59,9 +59,15 @@ def test_sql_tool_warns_when_indicator_values_come_without_names(tools):
 def test_sql_tool_warns_when_rows_are_not_tied_to_a_project(tools):
     unattributed = tools.run("consultar_fichas_sql", {"sql": "SELECT titulo, descripcion FROM lecciones"})
     attributed = tools.run("consultar_fichas_sql", {"sql": "SELECT codigo_proyecto, titulo FROM lecciones"})
+    by_file = tools.run(
+        "consultar_fichas_sql",
+        {"sql": "SELECT p.archivo_fuente, l.titulo FROM lecciones l JOIN proyectos p USING (codigo_proyecto)"},
+    )
     count = tools.run("consultar_fichas_sql", {"sql": "SELECT COUNT(*) FROM lecciones"})
     assert "codigo_proyecto" in unattributed.payload["advertencia"]
     assert "advertencia" not in attributed.payload
+    assert "advertencia" not in by_file.payload
+    assert COOP_FILE in by_file.sources
     assert "advertencia" not in count.payload
 
 
@@ -121,7 +127,10 @@ def test_agent_forces_final_answer_after_max_steps(tools, monkeypatch):
     assert answer.text == "Los informes no contienen ese dato."
 
 
-def test_system_prompt_lists_projects(tools):
+def test_system_prompt_lists_projects_with_their_caveats(tools):
     prompt = ProjectAgent(tools).config.system_instruction
     for code in ("PC-2025-014", "PC-2025-027", "PC-2025-033", "PC-2026-006"):
         assert code in prompt
+    # Las salvedades clave quedan siempre a la vista del modelo.
+    for caveat_type in ("[dato_no_oficial]", "[dato_no_validado]", "[resultado_no_atribuible]", "[documento_externo]"):
+        assert caveat_type in prompt
