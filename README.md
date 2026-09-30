@@ -205,8 +205,8 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
   de consultor —incluidas 6 preguntas trampa— con la respuesta esperada, redactada a partir de
   los informes, y la respuesta real del agente. La primera ronda destapó errores reales (por
   ejemplo, cifras atribuidas al indicador equivocado); cada uno se diagnosticó con la traza y se
-  corrigió. En la segunda ronda las 9 preguntas ejecutadas fueron correctas, incluidas las 6
-  trampas.
+  corrigió. Tras las rondas 2 y 3, las 14 preguntas tienen una respuesta correcta, incluidas las
+  6 trampas.
 
 ## 6. Supuestos
 
@@ -248,23 +248,26 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
 ## 8. Estimación de costo (50 consultores)
 
 **Consumo medido.** Cada respuesta del agente registra sus llamadas y tokens (se ven en la
-traza). En la ronda 2 de validación, con modelos Flash, una pregunta típica consumió entre
-2 y 4 llamadas, **unos 9.500 tokens de entrada y 1.000 de salida** (incluidos los de
-razonamiento). La entrada pesa más porque en cada paso se reenvían el prompt de sistema, el
-esquema de la base (~1.500 tokens) y los fragmentos recuperados.
+traza). En las rondas 2 y 3 de validación (16 respuestas con modelos Flash) una pregunta
+consumió en promedio **unos 14.000 tokens de entrada y 1.400 de salida** (incluidos los de
+razonamiento), con entre 2 y 7 llamadas; las preguntas simples rondan los 4.000-6.000 tokens
+y las comparativas llegan a 33.000. La entrada pesa más porque en cada paso se reenvían el
+prompt de sistema, el esquema de la base y los fragmentos recuperados. Tras la ronda 3 las
+salvedades se incluyeron en el prompt para ahorrar la llamada que el modelo hacía en casi
+cada pregunta, así que el consumo real debería quedar algo por debajo.
 
 **Supuestos del escenario.** 50 consultores × 10 preguntas al día × 22 días hábiles =
-**11.000 preguntas al mes**, con 10.000 tokens de entrada y 1.000 de salida por pregunta
-(redondeo conservador de lo medido).
+**11.000 preguntas al mes**, con 14.000 tokens de entrada y 1.400 de salida por pregunta
+(el promedio medido, sin descontar la optimización).
 
 | Modelo (capa de pago, precios de ai.google.dev al 30-09-2026) | Entrada / salida por 1M tokens | Costo por pregunta | **Costo mensual** |
 |---|---|---|---|
-| gemini-3.5-flash (modelo principal) | USD 1,50 / 9,00 | USD 0,024 | **≈ USD 264** |
-| gemini-3.6/3.7/3.8-flash (precio promocional hasta el 31-12-2026) | USD 0,75 / 3,75 | USD 0,011 | ≈ USD 124 |
-| gemini-3.6/3.7/3.8-flash (precio desde 2027) | USD 1,50 / 7,50 | USD 0,023 | ≈ USD 248 |
-| gemini-2.5-flash | USD 0,30 / 2,50 | USD 0,006 | ≈ USD 61 |
+| gemini-3.5-flash (modelo principal) | USD 1,50 / 9,00 | USD 0,034 | **≈ USD 370** |
+| gemini-3.6/3.7/3.8-flash (precio promocional hasta el 31-12-2026) | USD 0,75 / 3,75 | USD 0,016 | ≈ USD 173 |
+| gemini-3.6/3.7/3.8-flash (precio desde 2027) | USD 1,50 / 7,50 | USD 0,032 | ≈ USD 347 |
+| gemini-2.5-flash | USD 0,30 / 2,50 | USD 0,008 | ≈ USD 85 |
 
-- **Rango razonable: USD 60 a 270 al mes** (entre USD 1,20 y 5,30 por consultor), según el
+- **Rango razonable: USD 85 a 370 al mes** (entre USD 1,70 y 7,40 por consultor), según el
   modelo. Si el uso real fuera de 20 preguntas diarias por consultor, el costo se duplica.
 - **Extracción de fichas** (estimado, no medido): unos 6.000 tokens de entrada y 4.000 de
   salida por informe; menos de USD 0,05 por informe. Procesar 100 informes nuevos al año cuesta menos de USD 5.
