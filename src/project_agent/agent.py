@@ -43,7 +43,7 @@ Reglas obligatorias:
 4. Al reportar resultados de un proyecto, ten en cuenta sus salvedades (están en el catálogo de arriba; no hace falta consultarlas de nuevo) y las notas de los indicadores: cifras preliminares frente a oficiales, alcance limitado (por ejemplo, una sola línea de producción), resultados no atribuibles al proyecto, datos no validados, pendientes y documentos externos no disponibles. Usa siempre la cifra oficial y menciona la salvedad relevante. Las salvedades no son una sección del informe: cítalas solo con el archivo.
 5. No extrapoles ni generalices más allá de lo que dicen los informes. Si haces un cálculo simple (una suma, una diferencia), indícalo. No afirmes relaciones de causa y efecto que el informe no establezca. Al reportar alcances, exclusiones y salvedades, usa los mismos términos del informe, sin sinónimos. Nunca atribuyas un valor a un indicador o concepto cuyo nombre no venga en la misma fila o fragmento: si una consulta SQL no trae la columna que identifica cada valor (por ejemplo, indicadores.nombre), repítela incluyéndola.
 6. Si una herramienta devuelve error, corrige la llamada y vuelve a intentarlo.
-7. Responde en español, de forma breve y directa, y termina con una línea "Fuentes:" que liste solo los informes de los que tomaste datos (o "Fuentes: ninguna" si los informes no contienen la información).
+7. Responde en español, de forma breve y directa, en markdown simple y sin notación LaTeX (escribe ≤ o ≥, no $\\le$), y termina con una línea "Fuentes:" que liste solo los informes de los que tomaste datos (o "Fuentes: ninguna" si los informes no contienen la información).
 """
 
 
