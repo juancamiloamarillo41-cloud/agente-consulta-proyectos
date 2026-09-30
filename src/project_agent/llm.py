@@ -10,9 +10,11 @@ proveedor o de modelo no afecte al resto del código. Incluye:
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 
+import httpx
 from dotenv import load_dotenv
 from google import genai
 from google.genai import errors, types
@@ -24,7 +26,10 @@ from project_agent.config import ROOT_DIR
 # Cada modelo tiene su propia cuota diaria en la capa gratuita, así que la cadena también amplía la capacidad.
 DEFAULT_MODELS = ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash"]
 RETRYABLE_STATUS = {429, 500, 503, 504}
-MAX_ATTEMPTS_PER_MODEL = 4
+MAX_ATTEMPTS_PER_MODEL = 2
+REQUEST_TIMEOUT_MS = 90_000  # sin límite, una petición colgada bloquea al agente indefinidamente
+
+logger = logging.getLogger(__name__)
 
 
 class LLMError(RuntimeError):
@@ -41,7 +46,7 @@ def get_client() -> genai.Client:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise LLMError("Falta GEMINI_API_KEY. Copia .env.example como .env y agrega tu clave.")
-        _client = genai.Client(api_key=api_key)
+        _client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=REQUEST_TIMEOUT_MS))
     return _client
 
 
@@ -64,11 +69,17 @@ def generate(contents, config: types.GenerateContentConfig) -> types.GenerateCon
         for attempt in range(MAX_ATTEMPTS_PER_MODEL):
             try:
                 return client.models.generate_content(model=model, contents=contents, config=config)
+            except httpx.TimeoutException as exc:
+                last_error = exc
+                logger.warning("%s no respondió a tiempo (intento %d)", model, attempt + 1)
+                continue
             except errors.APIError as exc:
                 last_error = exc
                 if exc.code not in RETRYABLE_STATUS:
                     raise LLMError(f"Error del proveedor ({model}): {exc}") from exc
                 if _daily_quota_exhausted(exc):
-                    break  # siguiente modelo
-                time.sleep(min(5 * 2**attempt, 40))
+                    logger.warning("%s agotó su cuota diaria; se usa el siguiente modelo", model)
+                    break
+                logger.warning("%s respondió %s (intento %d); se reintenta", model, exc.code, attempt + 1)
+                time.sleep(min(5 * 2**attempt, 20))
     raise LLMError(f"Ningún modelo respondió tras varios intentos. Último error: {last_error}")
