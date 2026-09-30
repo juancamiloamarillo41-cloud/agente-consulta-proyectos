@@ -4,7 +4,7 @@ import pytest
 from google.genai import types
 
 from project_agent import agent as agent_module
-from project_agent.agent import ProjectAgent
+from project_agent.agent import MAX_HISTORY_TURNS, Conversation, ProjectAgent
 from project_agent.config import FICHAS_DIR, REPORTS_DIR
 from project_agent.storage.repository import rebuild_db_from_json
 from project_agent.tools import ReportTools
@@ -134,3 +134,49 @@ def test_system_prompt_lists_projects_with_their_caveats(tools):
     # Las salvedades clave quedan siempre a la vista del modelo.
     for caveat_type in ("[dato_no_oficial]", "[dato_no_validado]", "[resultado_no_atribuible]", "[documento_externo]"):
         assert caveat_type in prompt
+
+
+# ------------------------------------------------------------------ memoria de conversación
+
+
+def _text_of(content):
+    return "".join(part.text or "" for part in content.parts)
+
+
+def test_follow_up_questions_receive_previous_turns(tools, monkeypatch):
+    seen = []
+
+    def fake_generate(contents, config):
+        seen.append(list(contents))
+        return _model_turn(types.Part.from_text(text=f"respuesta {len(seen)}"))
+
+    monkeypatch.setattr(agent_module, "generate", fake_generate)
+    conversation = Conversation(ProjectAgent(tools))
+    conversation.ask("¿Qué proyecto hicimos en retail?")
+    conversation.ask("¿Y cuáles fueron sus lecciones?")
+
+    first, second = seen
+    assert len(first) == 1
+    assert [c.role for c in second] == ["user", "model", "user"]
+    assert _text_of(second[0]) == "¿Qué proyecto hicimos en retail?"
+    assert _text_of(second[1]) == "respuesta 1"
+    assert _text_of(second[2]) == "¿Y cuáles fueron sus lecciones?"
+
+
+def test_history_is_limited_and_can_be_reset(tools, monkeypatch):
+    seen = []
+
+    def fake_generate(contents, config):
+        seen.append(list(contents))
+        return _model_turn(types.Part.from_text(text="ok"))
+
+    monkeypatch.setattr(agent_module, "generate", fake_generate)
+    conversation = Conversation(ProjectAgent(tools))
+    for i in range(MAX_HISTORY_TURNS + 3):
+        conversation.ask(f"pregunta {i}")
+    # Solo viajan los últimos intercambios (pregunta + respuesta) más la pregunta actual.
+    assert len(seen[-1]) == 2 * MAX_HISTORY_TURNS + 1
+
+    conversation.reset()
+    conversation.ask("pregunta nueva")
+    assert len(seen[-1]) == 1

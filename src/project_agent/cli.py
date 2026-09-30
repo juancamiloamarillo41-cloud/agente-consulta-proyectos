@@ -1,7 +1,7 @@
 """Interfaz de consola del agente.
 
 Uso:
-    python -m project_agent                      # modo interactivo
+    python -m project_agent                      # modo interactivo, con memoria de la conversación
     python -m project_agent "¿Qué hicimos en salud?"   # una sola pregunta
 """
 
@@ -11,10 +11,11 @@ import argparse
 import json
 import sys
 
-from project_agent.agent import AgentAnswer, ProjectAgent
+from project_agent.agent import AgentAnswer, Conversation, ProjectAgent
 from project_agent.llm import LLMError
 
 EXIT_WORDS = {"salir", "exit", "quit", "q"}
+RESET_WORDS = {"nueva", "nuevo", "reiniciar"}
 
 
 def _format_args(args: dict) -> str:
@@ -57,8 +58,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.pregunta:
         questions = [" ".join(args.pregunta)]
     else:
-        print("Agente de proyectos de Procesa Consultores. Escribe tu pregunta ('salir' para terminar).")
+        print(
+            "Agente de proyectos de Procesa Consultores. Escribe tu pregunta; puedes hacer preguntas de "
+            "seguimiento.\n'nueva' empieza otra conversación · 'salir' para terminar."
+        )
         questions = None
+    conversation = Conversation(agent)
 
     while True:
         if questions is not None:
@@ -75,8 +80,12 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             if question.lower() in EXIT_WORDS:
                 return 0
+            if question.lower() in RESET_WORDS:
+                conversation.reset()
+                print("Nueva conversación.")
+                continue
         try:
-            print(render(agent.ask(question)))
+            print(render(conversation.ask(question)))
         except LLMError as exc:
             print(f"Error al consultar el modelo: {exc}", file=sys.stderr)
             if questions is not None:

@@ -10,6 +10,7 @@ herramientas desactivadas para que responda con lo que ya obtuvo.
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -20,6 +21,10 @@ from project_agent.storage.query import run_readonly_query
 from project_agent.tools import ReportTools
 
 MAX_STEPS = 6
+# Memoria de conversación: solo preguntas y respuestas finales (no resultados de herramientas),
+# de los últimos intercambios, para que el costo por pregunta no crezca sin límite.
+MAX_HISTORY_TURNS = 6
+MAX_HISTORY_ANSWER_CHARS = 2000
 FINAL_ANSWER_PROMPT = (
     "Se alcanzó el límite de consultas a herramientas. Responde ahora solo con la información ya "
     "obtenida, siguiendo las reglas. Si no encontraste el dato, di que los informes no lo contienen."
@@ -43,8 +48,12 @@ Reglas obligatorias:
 4. Al reportar resultados de un proyecto, ten en cuenta sus salvedades (están en el catálogo de arriba; no hace falta consultarlas de nuevo) y las notas de los indicadores: cifras preliminares frente a oficiales, alcance limitado (por ejemplo, una sola línea de producción), resultados no atribuibles al proyecto, datos no validados, pendientes y documentos externos no disponibles. Usa siempre la cifra oficial y menciona la salvedad relevante. Las salvedades no son una sección del informe: cítalas solo con el archivo.
 5. No extrapoles ni generalices más allá de lo que dicen los informes. Si haces un cálculo simple (una suma, una diferencia), indícalo. No afirmes relaciones de causa y efecto que el informe no establezca. Al reportar alcances, exclusiones y salvedades, usa los mismos términos del informe, sin sinónimos. Nunca atribuyas un valor a un indicador o concepto cuyo nombre no venga en la misma fila o fragmento: si una consulta SQL no trae la columna que identifica cada valor (por ejemplo, indicadores.nombre), repítela incluyéndola.
 6. Si una herramienta devuelve error, corrige la llamada y vuelve a intentarlo.
-7. Responde en español, de forma breve y directa, en markdown simple y sin notación LaTeX (escribe ≤ o ≥, no $\\le$), y termina con una línea "Fuentes:" que liste solo los informes de los que tomaste datos (o "Fuentes: ninguna" si los informes no contienen la información).
+7. Las preguntas pueden continuar la conversación (por ejemplo, «¿y cuáles fueron sus lecciones?»). Usa las preguntas y respuestas anteriores solo para entender a qué proyecto o tema se refiere el usuario, y obtén los datos nuevos con las herramientas. Si no queda claro a qué se refiere, pídele que lo precise.
+8. Responde en español, de forma breve y directa, en markdown simple y sin notación LaTeX (escribe ≤ o ≥, no $\\le$), y termina con una línea "Fuentes:" que liste solo los informes de los que tomaste datos (o "Fuentes: ninguna" si los informes no contienen la información).
 """
+
+
+Turn = tuple[str, str]  # (pregunta, respuesta final) de un intercambio anterior
 
 
 @dataclass
@@ -112,8 +121,10 @@ class ProjectAgent:
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         )
 
-    def ask(self, question: str) -> AgentAnswer:
-        contents: list[types.Content] = [types.Content(role="user", parts=[types.Part.from_text(text=question)])]
+    def ask(self, question: str, history: Sequence[Turn] = ()) -> AgentAnswer:
+        """Responde una pregunta. `history` son los intercambios anteriores de la conversación."""
+        contents = _history_contents(history)
+        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=question)]))
         answer = AgentAnswer(text="")
 
         for _ in range(MAX_STEPS):
@@ -145,3 +156,27 @@ class ProjectAgent:
         answer.usage.add(response)
         answer.text = (response.text or "").strip() or "No pude completar la respuesta dentro del límite de pasos."
         return answer
+
+
+def _history_contents(history: Sequence[Turn]) -> list[types.Content]:
+    contents = []
+    for question, reply in list(history)[-MAX_HISTORY_TURNS:]:
+        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=question)]))
+        contents.append(types.Content(role="model", parts=[types.Part.from_text(text=reply[:MAX_HISTORY_ANSWER_CHARS])]))
+    return contents
+
+
+@dataclass
+class Conversation:
+    """Conversación con memoria: guarda cada pregunta con su respuesta y se la pasa al agente."""
+
+    agent: ProjectAgent
+    turns: list[Turn] = field(default_factory=list)
+
+    def ask(self, question: str) -> AgentAnswer:
+        answer = self.agent.ask(question, self.turns)
+        self.turns.append((question, answer.text))
+        return answer
+
+    def reset(self) -> None:
+        self.turns.clear()
