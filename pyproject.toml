@@ -10,12 +10,13 @@ requires-python = ">=3.10"
 
 [project.scripts]
 agente-proyectos = "project_agent.cli:main"
+agente-proyectos-web = "project_agent.web:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-project_agent = ["storage/*.sql"]
+project_agent = ["storage/*.sql", "static/*.html"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

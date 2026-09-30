@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consulta de proyectos · Procesa Consultores</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d232b; --muted: #5b6573; --border: #dfe3e8;
+    --accent: #1c5cab; --accent-soft: #e8f0fa; --sql: #6b3fa0; --sql-soft: #f1ebf9;
+    --search: #1d7a55; --search-soft: #e6f4ee; --error: #b3261e; --error-soft: #fdecea;
+    --code-bg: #f1f3f6; --shadow: 0 1px 2px rgba(16, 24, 40, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151a; --panel: #1a1f26; --text: #e6e9ee; --muted: #9aa4b2; --border: #2c333d;
+      --accent: #6aa3ec; --accent-soft: #1d2a3b; --sql: #b99be6; --sql-soft: #2a2238;
+      --search: #5cc39a; --search-soft: #17302a; --error: #f2b8b5; --error-soft: #3a1d1b;
+      --code-bg: #232932; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 28px 16px 64px; overflow-wrap: anywhere; }
+  .panel, .answer, .step { min-width: 0; }
+  header h1 { margin: 0; font-size: 1.45rem; letter-spacing: -.01em; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  .projects { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 22px; }
+  .project {
+    font-size: .8rem; padding: 3px 9px; border-radius: 999px; background: var(--panel);
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .project b { color: var(--text); font-weight: 600; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; box-shadow: var(--shadow);
+  }
+  form textarea {
+    width: 100%; min-height: 78px; resize: vertical; padding: 10px 12px; font: inherit;
+    color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  }
+  form textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+  .form-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: .82rem; }
+  button.primary {
+    background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 9px 18px;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  @media (prefers-color-scheme: dark) { button.primary { color: #0e1726; } }
+  button.primary:disabled { opacity: .55; cursor: wait; }
+  .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .examples button {
+    font: inherit; font-size: .82rem; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    background: var(--accent-soft); color: var(--accent); border: 1px solid transparent;
+  }
+  .examples button:hover { border-color: var(--accent); }
+  #results { display: flex; flex-direction: column; gap: 16px; margin-top: 22px; }
+  .question { font-weight: 600; margin: 0 0 10px; }
+  .question::before { content: "Pregunta · "; color: var(--muted); font-weight: 500; }
+  .answer :first-child { margin-top: 0; }
+  .answer :last-child { margin-bottom: 0; }
+  .answer h1, .answer h2, .answer h3 { font-size: 1rem; margin: 14px 0 6px; }
+  .answer ul, .answer ol { padding-left: 22px; }
+  .answer code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .88em; }
+  .answer table { border-collapse: collapse; margin: 8px 0; font-size: .92em; }
+  .answer th, .answer td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; }
+  .section-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 16px 0 6px; }
+  .sources { margin: 0; padding-left: 18px; font-size: .88rem; }
+  details { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+  summary { cursor: pointer; font-size: .88rem; color: var(--muted); }
+  .steps { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .step { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: .86rem; }
+  .badge { display: inline-block; font-size: .72rem; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-right: 6px; }
+  .badge.sql { background: var(--sql-soft); color: var(--sql); }
+  .badge.search { background: var(--search-soft); color: var(--search); }
+  .step pre {
+    margin: 6px 0; padding: 7px 9px; background: var(--code-bg); border-radius: 6px;
+    white-space: pre-wrap; word-break: break-word; font-size: .82rem;
+  }
+  .step .result { color: var(--muted); }
+  .meta { margin-top: 10px; font-size: .78rem; color: var(--muted); }
+  .error { border-color: var(--error); background: var(--error-soft); color: var(--error); }
+  .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border);
+    border-top-color: var(--accent); animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Consulta de proyectos</h1>
+    <p>Procesa Consultores · preguntas sobre los informes de cierre, con fuentes y trazabilidad.</p>
+  </header>
+
+  <div class="projects" id="projects" aria-label="Informes disponibles"></div>
+
+  <section class="panel">
+    <form id="form">
+      <label for="question" class="section-title" style="display:block;margin-top:0">Tu pregunta</label>
+      <textarea id="question" maxlength="1000" placeholder="Por ejemplo: ¿qué lecciones aprendidas se repiten entre proyectos?" required></textarea>
+      <div class="form-row">
+        <span class="hint">Ctrl + Enter para enviar · cada respuesta tarda entre 10 y 40 s</span>
+        <button class="primary" id="submit" type="submit">Preguntar</button>
+      </div>
+      <div class="examples" id="examples"></div>
+    </form>
+  </section>
+
+  <section id="results" aria-live="polite"></section>
+</main>
+
+<script>
+const EXAMPLES = [
+  "¿En cuánto se redujo el tiempo de espera en la clínica?",
+  "¿Cuál es el OEE de toda la planta de Plásticos del Pacífico?",
+  "¿Qué proyectos no cumplieron todas sus metas y por qué?",
+  "¿Qué lecciones aprendidas se repiten entre varios proyectos?",
+  "¿Qué proyectos hemos hecho en minería?",
+];
+const TOOL_LABELS = {
+  consultar_fichas_sql: ["SQL · fichas", "sql"],
+  buscar_en_informes: ["Búsqueda · texto", "search"],
+};
+
+const form = document.getElementById("form");
+const input = document.getElementById("question");
+const submit = document.getElementById("submit");
+const results = document.getElementById("results");
+
+function el(tag, attrs = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === "text") node.textContent = value;
+    else if (key === "html") node.innerHTML = value;  // solo para HTML ya saneado por el servidor
+    else node.setAttribute(key, value);
+  }
+  for (const child of children) node.append(child);
+  return node;
+}
+
+for (const text of EXAMPLES) {
+  const chip = el("button", { type: "button", text });
+  chip.addEventListener("click", () => { input.value = text; input.focus(); });
+  document.getElementById("examples").append(chip);
+}
+
+fetch("/api/proyectos").then(r => r.ok ? r.json() : []).then(projects => {
+  const box = document.getElementById("projects");
+  for (const p of projects) {
+    box.append(el("span", { class: "project", title: p.archivo_fuente }, [
+      el("b", { text: p.codigo_proyecto }), ` · ${p.cliente} · ${p.sector}`,
+    ]));
+  }
+}).catch(() => {});
+
+function renderStep(call) {
+  const [label, kind] = TOOL_LABELS[call.nombre] || [call.nombre, "search"];
+  const args = call.argumentos || {};
+  const detail = args.sql !== undefined
+    ? args.sql.replace(/\s+/g, " ").trim()
+    : Object.entries(args).map(([k, v]) => `${k}: ${v}`).join("\n");
+  return el("li", { class: "step" }, [
+    el("span", { class: `badge ${kind}`, text: label }),
+    el("code", { text: call.nombre }),
+    el("pre", { text: detail }),
+    el("div", { class: "result", text: `→ ${call.resumen}` }),
+  ]);
+}
+
+function renderAnswer(question, data) {
+  const card = el("article", { class: "panel" }, [
+    el("p", { class: "question", text: question }),
+    el("div", { class: "answer", html: data.respuesta_html }),
+  ]);
+  if (data.fuentes.length) {
+    card.append(el("div", { class: "section-title", text: "Informes consultados por las herramientas" }));
+    card.append(el("ul", { class: "sources" }, data.fuentes.map(f => el("li", { text: f }))));
+  }
+  const steps = data.herramientas.length
+    ? el("ol", { class: "steps" }, data.herramientas.map(renderStep))
+    : el("p", { class: "hint", text: "No se usaron herramientas." });
+  card.append(el("details", {}, [
+    el("summary", { text: `Trazabilidad · ${data.herramientas.length} llamadas a herramientas` }),
+    steps,
+  ]));
+  const u = data.uso;
+  card.append(el("div", {
+    class: "meta",
+    text: `${data.segundos} s · modelo: ${u.modelos.join(", ") || "-"} · ${u.llamadas} llamadas al LLM · ` +
+          `${u.tokens_entrada.toLocaleString("es")} tokens de entrada · ${u.tokens_salida.toLocaleString("es")} de salida`,
+  }));
+  return card;
+}
+
+async function ask(question) {
+  submit.disabled = true;
+  const started = Date.now();
+  const counter = el("span", { text: "0 s" });
+  const loading = el("article", { class: "panel" }, [
+    el("p", { class: "question", text: question }),
+    el("div", { class: "loading" }, [el("div", { class: "spinner" }), "Consultando los informes… ", counter]),
+  ]);
+  const timer = setInterval(() => { counter.textContent = `${Math.round((Date.now() - started) / 1000)} s`; }, 1000);
+  results.prepend(loading);
+  try {
+    const response = await fetch("/api/preguntar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pregunta: question }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const detail = data.detail || {};
+      const error = new Error(detail.mensaje || (response.status === 422 ? "La pregunta no es válida." : "No se pudo obtener respuesta."));
+      error.technical = detail.tecnico;
+      throw error;
+    }
+    loading.replaceWith(renderAnswer(question, data));
+  } catch (error) {
+    const card = el("article", { class: "panel error" }, [
+      el("p", { class: "question", text: question }),
+      el("div", { text: error.message || "No se pudo obtener respuesta." }),
+    ]);
+    if (error.technical) {
+      card.append(el("details", {}, [el("summary", { text: "Detalle técnico" }), el("pre", { class: "hint", text: error.technical })]));
+    }
+    loading.replaceWith(card);
+  } finally {
+    clearInterval(timer);
+    submit.disabled = false;
+  }
+}
+
+form.addEventListener("submit", event => {
+  event.preventDefault();
+  const question = input.value.trim();
+  if (question && !submit.disabled) ask(question);
+});
+input.addEventListener("keydown", event => {
+  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) form.requestSubmit();
+});
+</script>
+</body>
+</html>
