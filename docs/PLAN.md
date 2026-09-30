@@ -38,8 +38,8 @@ data/informes/*.pdf|docx
 | 4 | Extracción de fichas con LLM (Gemini, salida estructurada) + verificación de cifras contra el informe + comparación con ficha golden | Hecho |
 | 5 | Agente: definición de herramientas, bucle de tool use, prompt de sistema, traza | Hecho |
 | 6 | CLI | Hecho |
-| 7 | Validación con preguntas reales de consultor (incluidas preguntas trampa) | En curso: 4 preguntas trampa verificadas manualmente |
-| 8 | README (instalación, arquitectura, supuestos, limitaciones, costo 50 consultores), video | Pendiente |
+| 7 | Validación con preguntas reales de consultor (incluidas preguntas trampa) | Hecho: 14 preguntas, 2 rondas (ver VALIDACION.md) |
+| 8 | README (instalación, arquitectura, supuestos, limitaciones, costo 50 consultores), video | README hecho; video pendiente |
 
 ## Trampas detectadas en los informes (el agente debe manejarlas)
 
@@ -64,6 +64,6 @@ data/informes/*.pdf|docx
 
 La capa gratuita permite unas 20 peticiones diarias por modelo. Una pregunta al
 agente consume entre 2 y 4 peticiones. `llm.py` recorre una cadena de modelos
-(`gemini-3.5-flash` → `gemini-2.5-flash` → `gemini-3.1-flash-lite`, configurable con
+(`gemini-3.5-flash` → `3.8` → `3.7` → `3.6` → `2.5-flash`, sin modelos lite; configurable con
 `GEMINI_MODELS`) y salta de modelo cuando uno agota su cuota diaria. Para el video y
 la sesión de revisión conviene activar facturación en el proyecto de Google AI Studio.
