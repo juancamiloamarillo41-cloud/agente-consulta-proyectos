@@ -78,34 +78,45 @@ def _like(pattern, value, escape=None):
     return _like_regex(normalize(str(pattern)), escape).fullmatch(normalize(str(value))) is not None
 
 
-def _open_readonly(db_path: Path) -> sqlite3.Connection:
+def _open_readonly(db_path: Path, restricted: bool = True) -> sqlite3.Connection:
+    """Abre la base en solo lectura.
+
+    `restricted` agrega el autorizador y se usa para el SQL del modelo. Las consultas internas
+    (fuentes, esquema) usan una conexión propia sin autorizador, en lugar de quitárselo a la del
+    modelo: así esa conexión nunca baja la guardia (y `set_authorizer(None)` no existe en Python 3.10).
+    """
     if not db_path.exists():
         raise SqlQueryError(f"No existe la base de fichas en {db_path}. Ejecuta primero la extracción.")
     conn = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
     conn.create_function("like", 2, _like, deterministic=True)
     conn.create_function("like", 3, _like, deterministic=True)
-    conn.set_authorizer(_authorizer)
+    if restricted:
+        conn.set_authorizer(_authorizer)
     return conn
 
 
-def _project_sources(conn: sqlite3.Connection, codes: set[str], files: set[str]) -> dict[str, str]:
+def _project_sources(db_path: Path, codes: set[str], files: set[str]) -> dict[str, str]:
     """Mapea codigo_proyecto -> archivo_fuente para los proyectos presentes en el resultado."""
     if not codes and not files:
         return {}
-    conn.set_authorizer(None)
     code_marks = ",".join("?" * len(codes)) or "NULL"
     file_marks = ",".join("?" * len(files)) or "NULL"
-    rows = conn.execute(
-        "SELECT codigo_proyecto, archivo_fuente FROM proyectos "
-        f"WHERE codigo_proyecto IN ({code_marks}) OR archivo_fuente IN ({file_marks})",
-        [*sorted(codes), *sorted(files)],
-    ).fetchall()
+    conn = _open_readonly(db_path, restricted=False)
+    try:
+        rows = conn.execute(
+            "SELECT codigo_proyecto, archivo_fuente FROM proyectos "
+            f"WHERE codigo_proyecto IN ({code_marks}) OR archivo_fuente IN ({file_marks})",
+            [*sorted(codes), *sorted(files)],
+        ).fetchall()
+    finally:
+        conn.close()
     return dict(rows)
 
 
 def run_readonly_query(sql: str, db_path: str | Path = DB_PATH, max_rows: int = SQL_MAX_ROWS) -> QueryResult:
     statement = validate_sql(sql)
-    conn = _open_readonly(Path(db_path))
+    db_path = Path(db_path)
+    conn = _open_readonly(db_path)
     try:
         try:
             cursor = conn.execute(statement)
@@ -123,7 +134,7 @@ def run_readonly_query(sql: str, db_path: str | Path = DB_PATH, max_rows: int = 
             idx = columns.index(column)
             return {row[idx] for row in rows if row[idx]}
 
-        sources = _project_sources(conn, values("codigo_proyecto"), values("archivo_fuente"))
+        sources = _project_sources(db_path, values("codigo_proyecto"), values("archivo_fuente"))
         return QueryResult(columns, rows, truncated, sources)
     finally:
         conn.close()
@@ -131,9 +142,8 @@ def run_readonly_query(sql: str, db_path: str | Path = DB_PATH, max_rows: int = 
 
 def describe_schema(db_path: str | Path = DB_PATH) -> str:
     """Esquema de la base en texto (CREATE TABLE) para incluirlo en la descripción de la herramienta."""
-    conn = _open_readonly(Path(db_path))
+    conn = _open_readonly(Path(db_path), restricted=False)
     try:
-        conn.set_authorizer(None)
         rows = conn.execute("SELECT sql FROM sqlite_master WHERE type = 'table' ORDER BY rowid").fetchall()
         return "\n\n".join(r[0] for r in rows)
     finally:
