@@ -217,7 +217,7 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
 
 ## 5. Validación
 
-- **Tests automáticos** (`python -m pytest`, 87 tests, sin consumir API): lectura de PDF y
+- **Tests automáticos** (`python -m pytest`, 88 tests, sin consumir API): lectura de PDF y
   Word, limpieza de tablas, secciones, búsqueda, base de datos, barreras del SQL, bucle del
   agente con el modelo simulado, cadena de modelos de respaldo, interfaz web y **fidelidad de
   las fichas generadas** (cada cifra existe en
