@@ -105,8 +105,11 @@ aportar nada que este caso necesite, y harían más difícil explicar qué ocurr
 Se usa directamente el SDK oficial `google-genai`.
 
 **Proveedor: Google Gemini.** Tiene capa gratuita y soporta salida estructurada con JSON
-Schema y llamadas a funciones. Todo el acceso pasa por [`llm.py`](src/project_agent/llm.py),
-así que cambiar de proveedor afecta a un solo módulo. Hay una cadena de modelos Flash
+Schema y llamadas a funciones. Las llamadas a la API (cliente, reintentos, cadena de
+modelos) están en [`llm.py`](src/project_agent/llm.py); `agent.py` y `extraction.py` usan
+además los tipos de mensajes del SDK de Gemini. Cambiar de proveedor implica adaptar esos
+tres módulos: la lectura de informes, la búsqueda, la base, las herramientas y los tests no
+cambian. Hay una cadena de modelos Flash
 (`gemini-3.5-flash` → `3.8` → `3.7` → `3.6` → `2.5`, configurable con la variable
 `GEMINI_MODELS`): ante errores transitorios (503 por demanda) se reintenta con espera
 exponencial y, si un modelo agotó su cuota diaria, se pasa al siguiente. Los modelos
