@@ -43,7 +43,7 @@ Fuentes: Informe_Cierre_PC-2025-027_Plasticos_del_Pacifico.pdf (1. Resumen ejecu
 | Entregable 1: repositorio con historial y código organizado | Commits por fase en este repositorio; tests automáticos en GitHub Actions; [tabla de módulos](#2-arquitectura) |
 | Entregable 2: README con instalación, arquitectura y decisiones, supuestos, limitaciones y costo para 50 consultores | Secciones [1](#1-instalación-y-ejecución), [2](#2-arquitectura), [3](#3-decisiones-técnicas), [6](#6-supuestos), [7](#7-limitaciones-conocidas) y [8](#8-estimación-de-costo-50-consultores) |
 | Entregable 3: fichas de los cuatro proyectos | [`data/fichas/`](data/fichas/) (JSON) |
-| Entregable 4: video | Se entrega aparte |
+| Entregable 4: video | Correo |
 | No incluir claves de API | `.env` está en `.gitignore`; solo se versiona [`.env.example`](.env.example) |
 | Opcional: interfaz web | [`web.py`](src/project_agent/web.py) y [`iniciar_web.bat`](iniciar_web.bat) |
 
