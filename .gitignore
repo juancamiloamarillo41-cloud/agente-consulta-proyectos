@@ -13,3 +13,5 @@ data/*.db-journal
 
 # Enunciado de la prueba (no se publica en el repositorio)
 /Prueba_Tecnica_*.pdf
+*.egg-info/
+build/

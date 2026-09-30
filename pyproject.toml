@@ -1,8 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "project-agent"
 version = "0.1.0"
 description = "Agente de consulta sobre informes de cierre de proyectos de Procesa Consultores"
 requires-python = ">=3.10"
+
+[project.scripts]
+agente-proyectos = "project_agent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+project_agent = ["storage/*.sql"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
