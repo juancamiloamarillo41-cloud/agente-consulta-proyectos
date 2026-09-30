@@ -40,6 +40,7 @@ data/informes/*.pdf|docx
 | 6 | CLI | Hecho |
 | 7 | Validación con preguntas reales de consultor (incluidas preguntas trampa) | Hecho: 14 preguntas, 2 rondas (ver VALIDACION.md) |
 | 8 | README (instalación, arquitectura, supuestos, limitaciones, costo 50 consultores), video | README hecho; video pendiente |
+| Opc. | Interfaz web sencilla (FastAPI + HTML) | Hecho |
 
 ## Trampas detectadas en los informes (el agente debe manejarlas)
 
@@ -64,6 +65,7 @@ data/informes/*.pdf|docx
 
 La capa gratuita permite unas 20 peticiones diarias por modelo. Una pregunta al
 agente consume entre 2 y 4 peticiones. `llm.py` recorre una cadena de modelos
-(`gemini-3.5-flash` → `3.8` → `3.7` → `3.6` → `2.5-flash`, sin modelos lite; configurable con
-`GEMINI_MODELS`) y salta de modelo cuando uno agota su cuota diaria. Para el video y
+(`gemini-3.5-flash` → `3.6` → `3.7` → `3.8` → `3-flash-preview`, sin modelos lite; configurable
+con `GEMINI_MODELS`) y salta de modelo cuando uno agota su cuota diaria o no está disponible
+para la clave. Para el video y
 la sesión de revisión conviene activar facturación en el proyecto de Google AI Studio.

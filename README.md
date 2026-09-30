@@ -50,6 +50,7 @@ El último comando crea `data/fichas.db` a partir de las fichas JSON versionadas
 |---|---|
 | Consola interactiva del agente | `agente-proyectos` (o `python -m project_agent`) |
 | Una sola pregunta | `agente-proyectos "¿Qué hicimos en el sector salud?"` |
+| Interfaz web (opcional) | `agente-proyectos-web` y abrir http://127.0.0.1:8000 |
 | Generar fichas de informes nuevos y reconstruir la base | `python -m project_agent.extraction` |
 | Regenerar todas las fichas (llama al LLM) | `python -m project_agent.extraction --force` |
 | Ejecutar los tests (sin LLM) | `python -m pytest` |
@@ -78,6 +79,7 @@ data/informes/*.pdf|*.docx
  agent.py     bucle de uso de herramientas con Gemini + reglas anti-alucinación + traza
         ▼
  cli.py       consola: respuesta, fuentes, herramientas usadas y consumo de tokens
+ web.py       interfaz web (opcional): API FastAPI + página HTML con lo mismo que la consola
 ```
 
 | Módulo | Responsabilidad |
@@ -93,6 +95,7 @@ data/informes/*.pdf|*.docx
 | [`agent.py`](src/project_agent/agent.py) | Bucle de uso de herramientas, prompt de sistema, traza y consumo |
 | [`llm.py`](src/project_agent/llm.py) | Único punto de contacto con el proveedor: reintentos y cadena de modelos de respaldo |
 | [`cli.py`](src/project_agent/cli.py) | Interfaz de consola |
+| [`web.py`](src/project_agent/web.py) y [`static/index.html`](src/project_agent/static/index.html) | Interfaz web opcional: API REST y página sin dependencias externas |
 
 ## 3. Decisiones técnicas
 
@@ -110,9 +113,11 @@ modelos) están en [`llm.py`](src/project_agent/llm.py); `agent.py` y `extractio
 además los tipos de mensajes del SDK de Gemini. Cambiar de proveedor implica adaptar esos
 tres módulos: la lectura de informes, la búsqueda, la base, las herramientas y los tests no
 cambian. Hay una cadena de modelos Flash
-(`gemini-3.5-flash` → `3.8` → `3.7` → `3.6` → `2.5`, configurable con la variable
+(`gemini-3.5-flash` → `3.6` → `3.7` → `3.8` → `3-flash-preview`, configurable con la variable
 `GEMINI_MODELS`): ante errores transitorios (503 por demanda) se reintenta con espera
-exponencial y, si un modelo agotó su cuota diaria, se pasa al siguiente. Los modelos
+exponencial y, si un modelo agotó su cuota diaria o no está disponible para la clave (404),
+se pasa al siguiente. `gemini-2.5-flash` salió de la cadena porque Google ya no lo ofrece a
+claves nuevas. Los modelos
 "lite" se excluyeron a propósito: en la validación asignaron cifras a indicadores
 equivocados, y es preferible un error de cuota a una respuesta incorrecta.
 
@@ -151,6 +156,16 @@ solo lectura (`mode=ro`) y un autorizador que solo permite operaciones de lectur
 limita a 50 filas. Si la consulta falla, el error vuelve al modelo para que la corrija.
 `LIKE` se redefine para ignorar mayúsculas y tildes, porque el modelo escribe "Martin" o
 "credito" con frecuencia.
+
+**Interfaz web con FastAPI y una página propia, no Streamlit.** Es opcional: la consola
+cumple el requisito. Se eligió FastAPI porque se puede probar con tests automáticos sin
+llamar a la API (con un agente simulado) y deja una API REST reutilizable
+(`POST /api/preguntar`, documentada en `/api/docs`). La página es un solo archivo HTML sin
+librerías externas. La web no agrega lógica: llama al mismo `ProjectAgent.ask()` y muestra
+la respuesta, las fuentes, la trazabilidad paso a paso y el consumo. Escucha solo en
+`127.0.0.1`, y el texto del modelo se escapa antes de convertir su markdown a HTML, para que
+no pueda inyectar código en la página. Si se agota la cuota o el modelo está saturado,
+muestra un mensaje claro en lugar de fallar.
 
 **Medidas contra respuestas inventadas.**
 1. Prompt de sistema con reglas explícitas: responder solo con resultados de herramientas,
@@ -196,9 +211,10 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
 
 ## 5. Validación
 
-- **Tests automáticos** (`python -m pytest`, 71 tests, sin consumir API): lectura de PDF y
+- **Tests automáticos** (`python -m pytest`, 87 tests, sin consumir API): lectura de PDF y
   Word, limpieza de tablas, secciones, búsqueda, base de datos, barreras del SQL, bucle del
-  agente con el modelo simulado y **fidelidad de las fichas generadas** (cada cifra existe en
+  agente con el modelo simulado, cadena de modelos de respaldo, interfaz web y **fidelidad de
+  las fichas generadas** (cada cifra existe en
   su informe; la ficha de la Cooperativa coincide con una ficha escrita a mano; las trampas
   conocidas quedan registradas como salvedades).
 - **Preguntas de validación**: [`docs/VALIDACION.md`](docs/VALIDACION.md) recoge 14 preguntas
@@ -265,7 +281,7 @@ cada pregunta, así que el consumo real debería quedar algo por debajo.
 | gemini-3.5-flash (modelo principal) | USD 1,50 / 9,00 | USD 0,034 | **≈ USD 370** |
 | gemini-3.6/3.7/3.8-flash (precio promocional hasta el 31-12-2026) | USD 0,75 / 3,75 | USD 0,016 | ≈ USD 173 |
 | gemini-3.6/3.7/3.8-flash (precio desde 2027) | USD 1,50 / 7,50 | USD 0,032 | ≈ USD 347 |
-| gemini-2.5-flash | USD 0,30 / 2,50 | USD 0,008 | ≈ USD 85 |
+| gemini-2.5-flash (solo cuentas que aún lo tienen habilitado) | USD 0,30 / 2,50 | USD 0,008 | ≈ USD 85 |
 
 - **Rango razonable: USD 85 a 370 al mes** (entre USD 1,70 y 7,40 por consultor), según el
   modelo. Si el uso real fuera de 20 preguntas diarias por consultor, el costo se duplica.
@@ -293,6 +309,6 @@ cada pregunta, así que el consumo real debería quedar algo por debajo.
 │   ├── VALIDACION.md        preguntas de validación y resultados
 │   └── validacion/          preguntas (JSON) y transcripciones del agente
 ├── scripts/run_validation.py
-├── src/project_agent/       código (ver tabla de módulos)
+├── src/project_agent/       código (ver tabla de módulos); static/ tiene la página web
 └── tests/                   tests automáticos y ficha golden escrita a mano
 ```
