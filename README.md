@@ -46,11 +46,16 @@ python -c "from project_agent.storage.repository import rebuild_db_from_json; re
 
 El último comando crea `data/fichas.db` a partir de las fichas JSON versionadas (no consume API).
 
+**En cada terminal nueva hay que activar el entorno** (`.venv\Scripts\activate`; en PowerShell
+también `.\.venv\Scripts\Activate.ps1`) antes de usar los comandos de la tabla. Si no, Windows
+responde que `agente-proyectos` no se reconoce como comando. La alternativa es llamarlos con su
+ruta: `.venv\Scripts\agente-proyectos-web.exe`.
+
 | Acción | Comando |
 |---|---|
 | Consola interactiva del agente | `agente-proyectos` (o `python -m project_agent`) |
 | Una sola pregunta | `agente-proyectos "¿Qué hicimos en el sector salud?"` |
-| Interfaz web (opcional) | `agente-proyectos-web` y abrir http://127.0.0.1:8000 |
+| Interfaz web (opcional) | `agente-proyectos-web` y abrir http://127.0.0.1:8000 (la terminal debe quedar abierta mientras se usa) |
 | Generar fichas de informes nuevos y reconstruir la base | `python -m project_agent.extraction` |
 | Regenerar todas las fichas (llama al LLM) | `python -m project_agent.extraction --force` |
 | Ejecutar los tests (sin LLM) | `python -m pytest` |
