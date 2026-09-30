@@ -15,13 +15,13 @@ data/informes/*.pdf|docx
         ├──────────────► search.py  (BM25)  ─────► herramienta buscar_en_informes
         │
         ▼
- extraction/ ── LLM con salida estructurada (esquema = ficha.py)
+ extraction.py ── LLM con salida estructurada (esquema = ficha.py)
         │         → data/fichas/*.json (entregable, versionado)
         ▼
  storage/    ── SQLite (schema.sql) ───────────► herramienta consultar_fichas_sql (solo lectura)
         │
         ▼
- agent/      ── bucle de tool use con el LLM, prompt anti-alucinación, registro de herramientas usadas
+ agent.py    ── bucle de tool use con el LLM, prompt anti-alucinación, registro de herramientas usadas
         │
         ▼
  cli.py      ── interfaz por consola (muestra respuesta + fuentes + traza)
@@ -35,10 +35,10 @@ data/informes/*.pdf|docx
 | 1 | Ingesta PDF/Word con tablas y división por secciones + tests | Hecho |
 | 2 | Búsqueda BM25 en texto + tests | Hecho |
 | 3 | Modelo de ficha (Pydantic) + SQLite + consulta SQL de solo lectura + tests | Hecho |
-| 4 | Extracción de fichas con LLM (salida estructurada) + validación contra ficha golden | Pendiente (requiere API key) |
-| 5 | Agente: definición de herramientas, bucle de tool use, prompt de sistema, traza | Pendiente |
-| 6 | CLI | Pendiente |
-| 7 | Validación con preguntas reales de consultor (incluidas preguntas trampa) | Pendiente |
+| 4 | Extracción de fichas con LLM (Gemini, salida estructurada) + verificación de cifras contra el informe + comparación con ficha golden | Hecho |
+| 5 | Agente: definición de herramientas, bucle de tool use, prompt de sistema, traza | Hecho |
+| 6 | CLI | Hecho |
+| 7 | Validación con preguntas reales de consultor (incluidas preguntas trampa) | En curso: 4 preguntas trampa verificadas manualmente |
 | 8 | README (instalación, arquitectura, supuestos, limitaciones, costo 50 consultores), video | Pendiente |
 
 ## Trampas detectadas en los informes (el agente debe manejarlas)
@@ -59,3 +59,11 @@ data/informes/*.pdf|docx
   Se soportan ambos formatos.
 - **Cruces útiles:** Martín Aguirre gerenció Plásticos y Clínica; Daniela Cevallos,
   Cooperativa y La Canasta. "Resistencia de mandos medios" aparece en Cooperativa y Plásticos.
+
+## Restricción de cuota (capa gratuita de Gemini)
+
+La capa gratuita permite unas 20 peticiones diarias por modelo. Una pregunta al
+agente consume entre 2 y 4 peticiones. `llm.py` recorre una cadena de modelos
+(`gemini-3.5-flash` → `gemini-2.5-flash` → `gemini-3.1-flash-lite`, configurable con
+`GEMINI_MODELS`) y salta de modelo cuando uno agota su cuota diaria. Para el video y
+la sesión de revisión conviene activar facturación en el proyecto de Google AI Studio.
