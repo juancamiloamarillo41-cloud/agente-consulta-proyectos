@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "tipo": "trampa: cifra preliminar vs oficial",
+    "pregunta": "¿Qué resultados obtuvimos en el proyecto de la clínica? ¿En cuánto se redujo el tiempo de espera?",
+    "esperado": "PC-2025-033. Espera total de 52 a 39,5 min (-24%, dato oficial; el 30% del resumen ejecutivo es la medición preliminar de diciembre de 2025). Admisión de 14 a 6 min (-57%), pre-admisión digital 41%, ausentismo de 22% a 15%, NPS de 18 a 37. Se cumplieron los cuatro objetivos."
+  },
+  {
+    "id": 2,
+    "tipo": "trampa: alcance limitado y dato no validado",
+    "pregunta": "¿Cuál es el OEE de toda la planta de Plásticos del Pacífico?",
+    "esperado": "No existe una cifra de planta: el proyecto se limitó a la Línea 1, cuyo OEE pasó de 58% a 71%. La Línea 2 quedó fuera del alcance; el cliente reporta alrededor de 63% pero Procesa Consultores no validó esa cifra."
+  },
+  {
+    "id": 3,
+    "tipo": "trampa: documento externo no disponible",
+    "pregunta": "¿Qué locales de La Canasta tenían peor precisión de inventario según el diagnóstico?",
+    "esperado": "El informe de cierre solo dice que la precisión era inferior al 80% en varios locales; el análisis por local está en el Informe de Diagnóstico (abril de 2026), que no forma parte de los informes disponibles."
+  },
+  {
+    "id": 4,
+    "tipo": "trampa: fuera del corpus",
+    "pregunta": "¿Qué proyectos hemos hecho en minería y qué resultados tuvieron?",
+    "esperado": "Los informes no contienen proyectos de minería. Los sectores disponibles son servicios financieros, manufactura, salud y retail."
+  },
+  {
+    "id": 5,
+    "tipo": "trampa: resultado no atribuible",
+    "pregunta": "¿Cuánto aumentó el monto colocado de la cooperativa gracias al proyecto?",
+    "esperado": "El cliente reportó un aumento de 9% en el monto colocado entre el primer y el segundo trimestre de 2025, pero el informe no lo atribuye al proyecto porque también responde a una campaña comercial paralela."
+  },
+  {
+    "id": 6,
+    "tipo": "trampa: dato inexistente",
+    "pregunta": "¿Cuál fue el presupuesto o costo del proyecto de Plásticos del Pacífico?",
+    "esperado": "Los informes no incluyen presupuesto ni costo del proyecto. Como referencia, el proyecto buscaba evitar invertir en una máquina adicional."
+  },
+  {
+    "id": 7,
+    "tipo": "SQL: filtro por atributo",
+    "pregunta": "¿Qué proyectos gerenció Martín Aguirre y en qué sectores?",
+    "esperado": "PC-2025-027 Plásticos del Pacífico (Manufactura) y PC-2025-033 Clínica Santa Lucía del Valle (Salud)."
+  },
+  {
+    "id": 8,
+    "tipo": "SQL: comparación entre proyectos",
+    "pregunta": "¿Qué proyectos no cumplieron todas sus metas y por qué?",
+    "esperado": "Cooperativa Horizonte Andino: abandono de solicitudes quedó en 11% frente a meta ≤ 10% (4 de 5 metas). La Canasta: integración con proveedores 0 de 3 (el ERP requiere actualización programada para noviembre de 2026 y un proveedor no tiene capacidad técnica; pasa a segunda fase) y días de inventario 31 frente a ≤ 30 (parcial; 29 sin la categoría de licores). Plásticos y la Clínica cumplieron todos sus objetivos."
+  },
+  {
+    "id": 9,
+    "tipo": "SQL: agregación",
+    "pregunta": "¿Cuál fue el proyecto más largo y cuánto duró?",
+    "esperado": "PC-2026-006 Supermercados La Canasta, 25 semanas (2 de marzo al 21 de agosto de 2026)."
+  },
+  {
+    "id": 10,
+    "tipo": "texto: detalle de ejecución",
+    "pregunta": "¿Cómo se redujeron las microparadas en la planta de Plásticos del Pacífico?",
+    "esperado": "Con tolvas con sensores de nivel y un cambio en la secuencia de secado de resina (menos atascos de alimentación que causaban microparadas de 1 a 3 minutos), apoyado en el registro de paradas en tablet con 24 causas y la reunión diaria de 15 minutos. En la línea base las microparadas sumaban 21 h/mes (17% de las paradas)."
+  },
+  {
+    "id": 11,
+    "tipo": "SQL + texto: metodología",
+    "pregunta": "¿En qué proyectos usamos SMED y qué resultado dio?",
+    "esperado": "Solo en Plásticos del Pacífico (Línea 1): el cambio de formato bajó de 95 a 38 minutos (-60%, meta ≤ 48). Se filmaron 18 cambios; el 55% de las actividades se hacía con la máquina detenida."
+  },
+  {
+    "id": 12,
+    "tipo": "síntesis entre proyectos",
+    "pregunta": "¿Qué lecciones aprendidas se repiten entre varios proyectos?",
+    "esperado": "Resistencia al cambio concentrada en mandos medios (Cooperativa y Plásticos). Calidad de datos como condición para medir (core bancario en Cooperativa, registro manual de paradas en Plásticos, datos maestros en La Canasta, medición manual de tiempos en la Clínica). Involucrar a actores clave en el diseño (jefes de agencia, supervisores, médicos, administradores de tienda)."
+  },
+  {
+    "id": 13,
+    "tipo": "caso de uso: nuevo proyecto",
+    "pregunta": "Voy a iniciar un proyecto de reposición de inventario en otra cadena de supermercados. ¿Qué debo tener en cuenta según lo que aprendimos?",
+    "esperado": "De La Canasta: depurar datos maestros desde el inicio (15% de códigos con unidades o factores de empaque incorrectos; tomó 3 semanas no previstas), identificar y validar en el diagnóstico las dependencias de terceros (versión del ERP, capacidad de proveedores), involucrar a los administradores de tienda en el diseño de parámetros, mantener conteos cíclicos y revisar parámetros trimestralmente y antes de temporadas altas."
+  },
+  {
+    "id": 14,
+    "tipo": "SQL: indicador específico",
+    "pregunta": "¿Cuánto mejoró la productividad de los analistas de crédito en la cooperativa?",
+    "esperado": "De 85 a 124 solicitudes por analista al mes (+46%), frente a una meta de ≥ 110. Meta cumplida."
+  }
+]
