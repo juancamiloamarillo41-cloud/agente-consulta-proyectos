@@ -61,12 +61,18 @@ python -m venv .venv
 .venv\Scripts\activate            # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e .                  # instala el paquete (src/project_agent) en modo editable
-copy .env.example .env            # Linux/macOS: cp .env.example .env
+copy .env.example .env            # Linux/macOS: cp .env.example .env  (en Windows es opcional: ver abajo)
 # editar .env y escribir la clave en GEMINI_API_KEY
 python -c "from project_agent.storage.repository import rebuild_db_from_json; rebuild_db_from_json()"
 ```
 
 El último comando crea `data/fichas.db` a partir de las fichas JSON versionadas (no consume API).
+
+**La clave de Gemini, en Windows, sin editar archivos:** al abrir `iniciar_agente.bat` o
+`iniciar_web.bat` por primera vez, si no hay `.env`, la ventana pide la clave (no se muestra al
+pegarla), comprueba con Google que sea válida (sin gastar cuota de preguntas) y crea `.env`.
+Lo mismo se puede hacer desde la terminal con `python -m project_agent.setup_env`. La clave se
+consigue gratis en [Google AI Studio](https://aistudio.google.com/apikey).
 
 **En cada terminal nueva hay que activar el entorno** (`.venv\Scripts\activate`; en PowerShell
 también `.\.venv\Scripts\Activate.ps1`) antes de usar los comandos de la tabla. Si no, Windows
@@ -248,7 +254,7 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
 
 ## 5. Validación
 
-- **Tests automáticos** (`python -m pytest`, 92 tests, sin consumir API; se ejecutan en
+- **Tests automáticos** (`python -m pytest`, 98 tests, sin consumir API; se ejecutan en
   GitHub Actions en Linux y Windows con cada push): lectura de PDF y
   Word, limpieza de tablas, secciones, búsqueda, base de datos, barreras del SQL, bucle del
   agente con el modelo simulado, memoria de conversación, cadena de modelos de respaldo,
