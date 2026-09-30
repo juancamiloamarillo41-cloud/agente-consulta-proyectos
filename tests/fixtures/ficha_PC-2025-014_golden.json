@@ -1,0 +1,59 @@
+{
+  "codigo_proyecto": "PC-2025-014",
+  "titulo": "Optimización del proceso de aprobación de créditos de consumo y microcrédito",
+  "cliente": "Cooperativa de Ahorro y Crédito Horizonte Andino Ltda.",
+  "descripcion_cliente": "Cooperativa de segmento 1 con 22 agencias en Sierra centro",
+  "sector": "Servicios financieros",
+  "subsector": "Cooperativas de ahorro y crédito",
+  "ubicacion": "Sierra centro",
+  "fecha_inicio": "2025-02-03",
+  "fecha_fin": "2025-06-27",
+  "duracion_semanas": 21,
+  "fecha_aceptacion": "2025-07-04",
+  "estado": "Cerrado",
+  "gerente_proyecto": "Ing. Daniela Cevallos",
+  "equipo_consultor": "1 gerente, 2 consultores senior, 1 analista de datos",
+  "tamano_equipo": 4,
+  "contraparte_cliente": "Gerencia de Negocios y Jefatura de Operaciones de Crédito",
+  "problema": "Tiempos de aprobación de crédito muy superiores a la competencia, con pérdida de socios hacia bancos y fintechs que responden en 48 horas. Una solicitud pasaba por 9 manos, la información se digitaba tres veces y el 34% de las solicitudes volvía a la agencia por documentación incompleta.",
+  "resumen": "Se rediseñó el flujo de originación de crédito eliminando validaciones duplicadas, automatizando la consulta al buró y aprobando por niveles de riesgo. El tiempo de aprobación bajó de 12 a 5 días hábiles y la productividad de los analistas aumentó 46%. Se cumplieron cuatro de los cinco indicadores meta.",
+  "objetivos": [
+    "Reducir el tiempo promedio de aprobación a 6 días hábiles o menos",
+    "Reducir las solicitudes con reproceso por debajo del 15%",
+    "Incrementar la productividad de los analistas de crédito en al menos 30%",
+    "Mejorar la satisfacción de los socios con el proceso de crédito a 4,0 sobre 5",
+    "Reducir la tasa de abandono de solicitudes al 10%"
+  ],
+  "alcance": "Crédito de consumo y microcrédito en las 22 agencias. Fuera del alcance: crédito hipotecario y corporativo. La consulta automática al buró la implementó TI del cliente con acompañamiento funcional de la firma.",
+  "metodologias": ["Lean", "Mapeo de flujo de valor (VSM)", "Piloto y despliegue escalonado"],
+  "iniciativas": [
+    "Checklist digital de documentación en agencia",
+    "Consulta automática al buró de crédito integrada al sistema de originación",
+    "Matriz de aprobación por niveles de riesgo (bajo riesgo y menos de USD 5.000 se aprueban en agencia)",
+    "Tablero diario de solicitudes en curso para jefes de agencia"
+  ],
+  "indicadores": [
+    {"nombre": "Tiempo promedio de aprobación", "unidad": "días hábiles", "linea_base": "12", "meta": "≤ 6", "resultado": "5", "variacion": "-58%", "linea_base_valor": 12, "resultado_valor": 5, "estado_meta": "cumplida", "notas": null},
+    {"nombre": "Solicitudes con reproceso", "unidad": "% del total", "linea_base": "34%", "meta": "< 15%", "resultado": "12%", "variacion": "-22 pp", "linea_base_valor": 34, "resultado_valor": 12, "estado_meta": "cumplida", "notas": null},
+    {"nombre": "Productividad de analistas", "unidad": "solicitudes/analista/mes", "linea_base": "85", "meta": "≥ 110", "resultado": "124", "variacion": "+46%", "linea_base_valor": 85, "resultado_valor": 124, "estado_meta": "cumplida", "notas": null},
+    {"nombre": "Satisfacción de socios", "unidad": "escala 1 a 5", "linea_base": "3,2", "meta": "≥ 4,0", "resultado": "4,1", "variacion": "+0,9", "linea_base_valor": 3.2, "resultado_valor": 4.1, "estado_meta": "cumplida", "notas": "Encuesta a 640 socios"},
+    {"nombre": "Tasa de abandono de solicitudes", "unidad": "% del total", "linea_base": "18%", "meta": "≤ 10%", "resultado": "11%", "variacion": "-7 pp", "linea_base_valor": 18, "resultado_valor": 11, "estado_meta": "no_cumplida", "notas": "Quedó un punto porcentual por encima de la meta"}
+  ],
+  "objetivos_cumplidos": 4,
+  "objetivos_totales": 5,
+  "lecciones": [
+    {"titulo": "La resistencia al cambio se concentró en los mandos medios", "descripcion": "Los jefes de agencia percibían la aprobación descentralizada como pérdida de control; incorporarlos como dueños del tablero diario fue determinante para el despliegue."},
+    {"titulo": "El piloto debe incluir agencias difíciles", "descripcion": "Las dos primeras agencias piloto eran las de mejor desempeño y sobreestimaron el impacto; se agregaron dos agencias rurales para validar el diseño."},
+    {"titulo": "La calidad de los datos del core bancario condiciona la medición", "descripcion": "Fue necesario depurar fechas de estado de las solicitudes antes de construir la línea base."}
+  ],
+  "recomendaciones": [
+    "Profundizar en las causas del abandono de solicitudes, principalmente en microcrédito rural, donde se concentra el 70% de los casos",
+    "Evaluar la originación digital de créditos de bajo monto a través de la aplicación móvil",
+    "Mantener la revisión mensual de indicadores en el comité de negocios durante al menos seis meses"
+  ],
+  "salvedades": [
+    {"tipo": "resultado_no_atribuible", "descripcion": "El aumento de 9% en el monto colocado entre el primer y segundo trimestre de 2025 no es indicador del proyecto porque también responde a una campaña comercial paralela."},
+    {"tipo": "fuera_de_alcance", "descripcion": "Crédito hipotecario y crédito corporativo quedaron fuera del alcance."}
+  ],
+  "archivo_fuente": "Informe_Cierre_PC-2025-014_Cooperativa_Horizonte_Andino.pdf"
+}
