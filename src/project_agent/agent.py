@@ -3,7 +3,8 @@
 El bucle está escrito a mano (sin frameworks de agentes) porque es corto y así
 cada paso es visible y defendible: el modelo pide herramientas, el código las
 ejecuta, registra la traza y devuelve el resultado, hasta que el modelo responde
-en texto o se alcanza el límite de pasos.
+en texto. Si se alcanza el límite de pasos, se hace una última llamada con las
+herramientas desactivadas para que responda con lo que ya obtuvo.
 """
 
 from __future__ import annotations
@@ -19,6 +20,10 @@ from project_agent.storage.query import run_readonly_query
 from project_agent.tools import ReportTools
 
 MAX_STEPS = 6
+FINAL_ANSWER_PROMPT = (
+    "Se alcanzó el límite de consultas a herramientas. Responde ahora solo con la información ya "
+    "obtenida, siguiendo las reglas. Si no encontraste el dato, di que los informes no lo contienen."
+)
 
 SYSTEM_PROMPT = """\
 Eres el asistente de consulta de proyectos de Procesa Consultores. Respondes preguntas de consultores sobre los informes de cierre de proyectos anteriores.
@@ -34,7 +39,7 @@ Elige la herramienta según la pregunta; usa ambas cuando convenga (por ejemplo,
 Reglas obligatorias:
 1. Responde solo con información obtenida de las herramientas en esta conversación. Nunca uses conocimiento propio sobre los proyectos, los clientes ni el sector.
 2. Cita la fuente de cada dato con el nombre del archivo del informe (y la sección si la conoces), por ejemplo: (Informe_Cierre_PC-2025-014_Cooperativa_Horizonte_Andino.pdf, 5. Resultados).
-3. Si la información no está en los informes, dilo explícitamente ("Los informes no contienen información sobre ...") y no la supongas. Si solo tienes una parte, responde esa parte e indica qué falta. Antes de afirmar que un dato no está, compruébalo con la otra herramienta o con una segunda búsqueda con otros términos (por ejemplo, la sección de Resultados o la tabla indicadores).
+3. Si la información no está en los informes, dilo explícitamente ("Los informes no contienen información sobre ...") y no la supongas. Si solo tienes una parte, responde esa parte e indica qué falta. Antes de afirmar que un dato no está, haz una sola comprobación adicional con la otra herramienta o con otros términos (por ejemplo, la sección de Resultados o la tabla indicadores); si tampoco aparece, concluye que no está y no sigas buscando.
 4. Antes de reportar resultados de un proyecto, revisa sus salvedades (tabla salvedades o notas del informe): cifras preliminares frente a oficiales, alcance limitado (por ejemplo, una sola línea de producción), resultados no atribuibles al proyecto, datos no validados, pendientes y documentos externos no disponibles. Usa siempre la cifra oficial y menciona la salvedad relevante.
 5. No extrapoles ni generalices más allá de lo que dicen los informes. Si haces un cálculo simple (una suma, una diferencia), indícalo. Nunca atribuyas un valor a un indicador o concepto cuyo nombre no venga en la misma fila o fragmento: si una consulta SQL no trae la columna que identifica cada valor (por ejemplo, indicadores.nombre), repítela incluyéndola.
 6. Si una herramienta devuelve error, corrige la llamada y vuelve a intentarlo.
@@ -118,8 +123,12 @@ class ProjectAgent:
                 response_parts.append(types.Part.from_function_response(name=call.name, response=output.payload))
             contents.append(types.Content(role="user", parts=response_parts))
 
-        answer.text = (
-            "No pude completar la respuesta dentro del límite de pasos. "
-            "Intenta reformular la pregunta de forma más específica."
+        # Límite alcanzado: se fuerza una respuesta en texto con lo ya recuperado, sin más herramientas.
+        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=FINAL_ANSWER_PROMPT)]))
+        final_config = self.config.model_copy(
+            update={"tool_config": types.ToolConfig(function_calling_config=types.FunctionCallingConfig(mode="NONE"))}
         )
+        response = generate(contents, final_config)
+        answer.usage.add(response)
+        answer.text = (response.text or "").strip() or "No pude completar la respuesta dentro del límite de pasos."
         return answer

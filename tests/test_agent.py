@@ -107,13 +107,18 @@ def test_agent_executes_tools_and_records_trace(tools, monkeypatch):
     assert second_call[2].parts[0].function_response.response["fuentes"] == {"PC-2025-014": COOP_FILE}
 
 
-def test_agent_stops_after_max_steps(tools, monkeypatch):
-    monkeypatch.setattr(
-        agent_module, "generate", lambda contents, config: _model_turn(_call("buscar_en_informes", consulta="OEE"))
-    )
+def test_agent_forces_final_answer_after_max_steps(tools, monkeypatch):
+    def fake_generate(contents, config):
+        tools_disabled = config.tool_config and config.tool_config.function_calling_config.mode == "NONE"
+        if tools_disabled:
+            return _model_turn(types.Part.from_text(text="Los informes no contienen ese dato."))
+        return _model_turn(_call("buscar_en_informes", consulta="OEE"))
+
+    monkeypatch.setattr(agent_module, "generate", fake_generate)
     answer = ProjectAgent(tools).ask("pregunta que no converge")
     assert len(answer.tool_calls) == agent_module.MAX_STEPS
-    assert "límite de pasos" in answer.text
+    assert answer.usage.llm_calls == agent_module.MAX_STEPS + 1
+    assert answer.text == "Los informes no contienen ese dato."
 
 
 def test_system_prompt_lists_projects(tools):
