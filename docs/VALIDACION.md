@@ -99,6 +99,20 @@ Tras los ajustes se repitieron la 8 y la 14 ([transcripciones](validacion/transc
 | 8 | 7 llamadas, 31.900 tokens de entrada; "industriales"; cita "salvedades" | **5 llamadas**, 29.900 tokens; términos correctos; el 70% rural aparece como dato del informe, no como causa; citas limpias |
 | 14 | 5 llamadas, 17.100 tokens de entrada; consulta repetida | **3 llamadas, 10.200 tokens**; misma respuesta correcta |
 
+## Prueba final: conversación con seguimiento
+
+Tras agregar la memoria de conversación y los últimos ajustes del prompt (sin LaTeX, citas de
+sección solo desde la búsqueda en texto), se hizo una conversación corta con el modelo real:
+
+| Pregunta | Resultado |
+|---|---|
+| «¿Qué resultados tuvo el proyecto de La Canasta?» | ✅ Los 5 indicadores con sus cifras y estado, la aclaración de licores (29 días) y el pendiente de la fase 2. Escribe «≤ 5%», sin LaTeX; solo cita «6. Resultados», que vino de la búsqueda, y la salvedad con el archivo. 3 llamadas |
+| «¿Y cuáles fueron sus lecciones aprendidas?» | ✅ Entendió que «sus» se refería a La Canasta sin repetirlo y devolvió sus 3 lecciones, fieles al informe. 2 llamadas |
+
+La traza de la segunda mostró un detalle: la consulta filtraba por `codigo_proyecto = 'PC-2026-006'`
+sin seleccionar esa columna, así que la lista de informes recuperados quedaba vacía (la respuesta
+sí citaba el informe). Ahora una consulta filtrada por un único proyecto identifica su informe.
+
 ## Cómo repetir la validación
 
 ```bash
