@@ -1,0 +1,15 @@
+# Entorno
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secretos
+.env
+
+# Artefactos generados (se regeneran con los scripts)
+data/*.db
+data/*.db-journal
+
+# Enunciado de la prueba (no se publica en el repositorio)
+/Prueba_Tecnica_*.pdf

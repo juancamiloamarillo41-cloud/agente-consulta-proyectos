@@ -1,0 +1,9 @@
+[project]
+name = "project-agent"
+version = "0.1.0"
+description = "Agente de consulta sobre informes de cierre de proyectos de Procesa Consultores"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
