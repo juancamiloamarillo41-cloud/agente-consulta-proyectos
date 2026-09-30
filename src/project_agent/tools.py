@@ -129,11 +129,21 @@ class ReportTools:
         }
         if not result.rows:
             payload["mensaje"] = "La consulta no devolvió filas."
-        elif "indicadores" in sql.lower() and "nombre" not in result.columns:
-            # Sin el nombre, el modelo tiende a inventar a qué indicador corresponde cada valor.
-            payload["advertencia"] = (
-                "Las filas no incluyen el nombre del indicador. No atribuyas estos valores a ningún "
-                "indicador: repite la consulta incluyendo la columna nombre."
-            )
+        else:
+            # Sin la columna que identifica cada fila, el modelo tiende a deducir (o inventar) a qué
+            # indicador o proyecto corresponde cada valor.
+            warnings = []
+            if "indicadores" in sql.lower() and "nombre" not in result.columns:
+                warnings.append(
+                    "Las filas no incluyen el nombre del indicador: no atribuyas estos valores a ningún "
+                    "indicador; repite la consulta incluyendo la columna nombre."
+                )
+            if "codigo_proyecto" not in result.columns and len(result.columns) > 1:
+                warnings.append(
+                    "Las filas no indican a qué proyecto pertenecen: para atribuir datos a un proyecto, "
+                    "repite la consulta incluyendo codigo_proyecto."
+                )
+            if warnings:
+                payload["advertencia"] = " ".join(warnings)
         summary = f"{len(result.rows)} filas" + (" (truncado)" if result.truncated else "")
         return ToolOutput(payload, summary, sorted(set(result.sources.values())))
