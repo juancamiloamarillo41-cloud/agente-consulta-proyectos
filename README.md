@@ -38,7 +38,7 @@ Fuentes: Informe_Cierre_PC-2025-027_Plasticos_del_Pacifico.pdf (1. Resumen ejecu
 | 3. Dos herramientas (texto y SQL); el agente decide cuál usar | [`tools.py`](src/project_agent/tools.py): `buscar_en_informes` (BM25) y `consultar_fichas_sql` (solo lectura); el modelo elige en [`agent.py`](src/project_agent/agent.py). En [VALIDACION.md](docs/VALIDACION.md) hay respuestas que usan una, la otra o ambas |
 | 4. Cada respuesta indica su informe; si algo no está, lo dice | Reglas del prompt en `agent.py` y campo `fuentes` en los resultados de las herramientas. Casos verificados: preguntas 3, 4 y 6 de [VALIDACION.md](docs/VALIDACION.md) |
 | 5. Trazabilidad de las herramientas usadas | Bloque «Trazabilidad» en la consola ([`cli.py`](src/project_agent/cli.py)) y en la web: herramienta, argumentos exactos (SQL o búsqueda) y resultado |
-| 6. Interfaz por consola | `agente-proyectos` ([sección 1](#1-instalación-y-ejecución)); admite preguntas de seguimiento |
+| 6. Interfaz por consola | `agente-proyectos` o doble clic en `iniciar_agente.bat` ([sección 1](#1-instalación-y-ejecución)); admite preguntas de seguimiento |
 | Explicar la librería o framework usado | [Sección 3](#3-decisiones-técnicas): SDK oficial de Gemini, sin framework de agentes, y por qué |
 | Entregable 1: repositorio con historial y código organizado | Commits por fase en este repositorio; tests automáticos en GitHub Actions; [tabla de módulos](#2-arquitectura) |
 | Entregable 2: README con instalación, arquitectura y decisiones, supuestos, limitaciones y costo para 50 consultores | Secciones [1](#1-instalación-y-ejecución), [2](#2-arquitectura), [3](#3-decisiones-técnicas), [6](#6-supuestos), [7](#7-limitaciones-conocidas) y [8](#8-estimación-de-costo-50-consultores) |
@@ -75,7 +75,8 @@ ruta: `.venv\Scripts\agente-proyectos-web.exe`.
 
 | Acción | Comando |
 |---|---|
-| Consola interactiva del agente | `agente-proyectos` (o `python -m project_agent`) |
+| Consola del agente, en Windows | **Doble clic en `iniciar_agente.bat`**: abre una ventana lista para preguntar, sin activar el entorno |
+| Consola interactiva del agente | `agente-proyectos` (o `python -m project_agent`); `nueva` reinicia la conversación y `salir` termina |
 | Una sola pregunta | `agente-proyectos "¿Qué hicimos en el sector salud?"` |
 | Interfaz web (opcional), en Windows | **Doble clic en `iniciar_web.bat`**: arranca el servidor y abre el navegador; al cerrar la ventana se detiene |
 | Interfaz web (opcional), desde la terminal | `agente-proyectos-web` (abre el navegador; `--sin-navegador` para no abrirlo) |
@@ -347,6 +348,7 @@ cada pregunta, así que el consumo real debería quedar algo por debajo.
 │   ├── PLAN.md              plan de trabajo y trampas detectadas en los informes
 │   ├── VALIDACION.md        preguntas de validación y resultados
 │   └── validacion/          preguntas (JSON) y transcripciones del agente
+├── iniciar_agente.bat       lanzador de la consola del agente con doble clic (Windows)
 ├── iniciar_web.bat          lanzador de la interfaz web con doble clic (Windows)
 ├── scripts/run_validation.py
 ├── src/project_agent/       código (ver tabla de módulos); static/ tiene la página web
