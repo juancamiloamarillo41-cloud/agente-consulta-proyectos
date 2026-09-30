@@ -45,6 +45,10 @@ def render(answer: AgentAnswer) -> str:
 def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+    if not sys.stdin.isatty() and hasattr(sys.stdin, "reconfigure"):
+        # Entrada por tubería: en Windows llegaría con la página de códigos antigua y, desde
+        # PowerShell, con una marca BOM al inicio. utf-8-sig lee UTF-8 y descarta esa marca.
+        sys.stdin.reconfigure(encoding="utf-8-sig")
     parser = argparse.ArgumentParser(description="Consulta los informes de cierre de proyectos.")
     parser.add_argument("pregunta", nargs="*", help="Pregunta a responder (sin argumentos: modo interactivo).")
     args = parser.parse_args(argv)
@@ -72,7 +76,8 @@ def main(argv: list[str] | None = None) -> int:
             question = questions.pop(0)
         else:
             try:
-                question = input("\n> ").strip()
+                # lstrip: algunas terminales anteponen una marca invisible (BOM) al texto recibido.
+                question = input("\n> ").strip().lstrip("﻿​").strip()
             except (EOFError, KeyboardInterrupt):
                 print()
                 return 0
