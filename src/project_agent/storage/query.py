@@ -6,6 +6,9 @@ barreras independientes:
 2. Conexión abierta en modo de solo lectura (`mode=ro`).
 3. Un autorizador de SQLite que solo permite operaciones de lectura.
 Además se limita el número de filas devueltas para no saturar el contexto.
+
+`LIKE` se redefine para ignorar mayúsculas y tildes: el modelo escribe "Martin" o
+"credito" sin tilde con frecuencia y el LIKE nativo de SQLite no los encontraría.
 """
 
 from __future__ import annotations
@@ -13,9 +16,11 @@ from __future__ import annotations
 import re
 import sqlite3
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 
 from project_agent.config import DB_PATH, SQL_MAX_ROWS
+from project_agent.text import normalize
 
 _ALLOWED_ACTIONS = {
     sqlite3.SQLITE_SELECT,
@@ -52,10 +57,33 @@ def validate_sql(sql: str) -> str:
     return statement
 
 
+@lru_cache(maxsize=256)
+def _like_regex(pattern: str, escape: str | None) -> re.Pattern:
+    parts, i = [], 0
+    while i < len(pattern):
+        ch = pattern[i]
+        if escape and ch == escape and i + 1 < len(pattern):
+            parts.append(re.escape(pattern[i + 1]))
+            i += 2
+            continue
+        parts.append(".*" if ch == "%" else "." if ch == "_" else re.escape(ch))
+        i += 1
+    return re.compile("".join(parts), re.DOTALL)
+
+
+def _like(pattern, value, escape=None):
+    """Implementación de LIKE insensible a mayúsculas y tildes (SQLite llama like(patrón, valor))."""
+    if pattern is None or value is None:
+        return None
+    return _like_regex(normalize(str(pattern)), escape).fullmatch(normalize(str(value))) is not None
+
+
 def _open_readonly(db_path: Path) -> sqlite3.Connection:
     if not db_path.exists():
         raise SqlQueryError(f"No existe la base de fichas en {db_path}. Ejecuta primero la extracción.")
     conn = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
+    conn.create_function("like", 2, _like, deterministic=True)
+    conn.create_function("like", 3, _like, deterministic=True)
     conn.set_authorizer(_authorizer)
     return conn
 

@@ -12,11 +12,11 @@ from __future__ import annotations
 
 import math
 import re
-import unicodedata
 from collections import Counter
 from dataclasses import dataclass
 
 from project_agent.ingestion.models import Chunk
+from project_agent.text import normalize
 
 STOPWORDS = frozenset(
     """
@@ -30,12 +30,6 @@ STOPWORDS = frozenset(
 )
 
 TOKEN_RE = re.compile(r"[a-z0-9]+(?:[.,][0-9]+)?")
-
-
-def normalize(text: str) -> str:
-    """Minúsculas y sin tildes: 'Línea' y 'linea' deben coincidir."""
-    decomposed = unicodedata.normalize("NFKD", text.lower())
-    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
 
 
 def _stem(token: str) -> str:

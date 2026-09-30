@@ -32,6 +32,19 @@ def test_indicator_values_are_queryable(db_path):
     assert result.sources == {"PC-2025-014": "Informe_Cierre_PC-2025-014_Cooperativa_Horizonte_Andino.pdf"}
 
 
+@pytest.mark.parametrize(
+    "condition",
+    ["cliente LIKE '%credito%'", "cliente LIKE '%CRÉDITO%'", "gerente_proyecto LIKE 'ing. daniela%'", "codigo_proyecto LIKE 'PC-2025-01_'"],
+)
+def test_like_ignores_case_and_accents(db_path, condition):
+    assert run_readonly_query(f"SELECT codigo_proyecto FROM proyectos WHERE {condition}", db_path).rows == [("PC-2025-014",)]
+
+
+def test_like_escape_clause(db_path):
+    sql = "SELECT COUNT(*) FROM indicadores WHERE linea_base LIKE '34!%' ESCAPE '!'"
+    assert run_readonly_query(sql, db_path).rows == [(1,)]
+
+
 def test_resaving_a_ficha_is_idempotent(db_path, golden_ficha):
     conn = connect(db_path)
     save_ficha(conn, golden_ficha)
