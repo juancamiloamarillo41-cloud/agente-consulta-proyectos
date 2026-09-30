@@ -5,13 +5,16 @@ La web no agrega lógica: llama a `ProjectAgent.ask()` y muestra lo mismo que la
 localhost, y el texto del modelo se escapa antes de convertir su markdown a HTML.
 
 Uso:
-    agente-proyectos-web            # http://127.0.0.1:8000
+    iniciar_web.bat                 # doble clic en Windows: arranca y abre el navegador
+    agente-proyectos-web            # http://127.0.0.1:8000, abre el navegador
+    agente-proyectos-web --sin-navegador
 """
 
 from __future__ import annotations
 
 import html
 import re
+import socket
 import time
 from pathlib import Path
 from typing import Callable
@@ -111,15 +114,34 @@ def create_app(agent_factory: Callable[[], ProjectAgent] = ProjectAgent) -> Fast
     return app
 
 
+def _port_in_use(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        return sock.connect_ex(("127.0.0.1", port)) == 0
+
+
 def main() -> None:
     import argparse
+    import threading
+    import webbrowser
 
     import uvicorn
 
     parser = argparse.ArgumentParser(description="Interfaz web del agente de consulta de proyectos.")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--sin-navegador", action="store_true", help="No abrir el navegador automáticamente.")
     args = parser.parse_args()
-    print(f"Abre http://127.0.0.1:{args.port} en el navegador (Ctrl+C para detener).")
+    url = f"http://127.0.0.1:{args.port}"
+
+    if _port_in_use(args.port):
+        # Lo normal es que la web ya esté abierta en otra ventana: basta con mostrarla.
+        print(f"Ya hay un servidor en {url}; se abre en el navegador.")
+        if not args.sin_navegador:
+            webbrowser.open(url)
+        return
+
+    print(f"Interfaz web en {url} · cierra esta ventana o pulsa Ctrl+C para detenerla.")
+    if not args.sin_navegador:
+        threading.Timer(1.5, webbrowser.open, args=(url,)).start()
     uvicorn.run(create_app(), host="127.0.0.1", port=args.port, log_level="warning")
 
 

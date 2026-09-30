@@ -106,3 +106,16 @@ def test_model_html_is_escaped():
     assert "<script>" not in rendered
     assert "&lt;script&gt;" in rendered
     assert "<strong>negrita</strong>" in rendered
+
+
+def test_port_in_use_detection():
+    import socket
+
+    from project_agent.web import _port_in_use
+
+    with socket.socket() as server:
+        server.bind(("127.0.0.1", 0))
+        server.listen()
+        port = server.getsockname()[1]
+        assert _port_in_use(port)
+    assert not _port_in_use(port)
