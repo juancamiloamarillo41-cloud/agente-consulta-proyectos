@@ -1,5 +1,7 @@
 # Agente de consulta de proyectos — Procesa Consultores
 
+[![Tests](https://github.com/juancamiloamarillo41-cloud/agente-consulta-proyectos/actions/workflows/tests.yml/badge.svg)](https://github.com/juancamiloamarillo41-cloud/agente-consulta-proyectos/actions/workflows/tests.yml)
+
 Agente en Python que responde en lenguaje natural preguntas de consultores sobre los
 informes de cierre de proyectos anteriores. Cada respuesta cita el informe del que
 proviene, muestra qué herramientas se usaron para llegar a ella y, si algo no está en
@@ -24,6 +26,26 @@ Fuentes: Informe_Cierre_PC-2025-027_Plasticos_del_Pacifico.pdf (1. Resumen ejecu
   Informes recuperados por las herramientas:
    - Informe_Cierre_PC-2025-027_Plasticos_del_Pacifico.pdf
 ```
+
+---
+
+## Cumplimiento del enunciado
+
+| Requisito | Dónde se cumple |
+|---|---|
+| 1. Extracción de fichas con respuestas estructuradas del modelo; campos justificados | [`extraction.py`](src/project_agent/extraction.py) envía a Gemini el JSON Schema de [`ficha.py`](src/project_agent/ficha.py) como salida estructurada; la justificación de los campos está en la [sección 4](#4-diseño-de-la-ficha) |
+| 2. Fichas en una base relacional | SQLite con 8 tablas ([`schema.sql`](src/project_agent/storage/schema.sql)); `data/fichas.db` se reconstruye desde los JSON |
+| 3. Dos herramientas (texto y SQL); el agente decide cuál usar | [`tools.py`](src/project_agent/tools.py): `buscar_en_informes` (BM25) y `consultar_fichas_sql` (solo lectura); el modelo elige en [`agent.py`](src/project_agent/agent.py). En [VALIDACION.md](docs/VALIDACION.md) hay respuestas que usan una, la otra o ambas |
+| 4. Cada respuesta indica su informe; si algo no está, lo dice | Reglas del prompt en `agent.py` y campo `fuentes` en los resultados de las herramientas. Casos verificados: preguntas 3, 4 y 6 de [VALIDACION.md](docs/VALIDACION.md) |
+| 5. Trazabilidad de las herramientas usadas | Bloque «Trazabilidad» en la consola ([`cli.py`](src/project_agent/cli.py)) y en la web: herramienta, argumentos exactos (SQL o búsqueda) y resultado |
+| 6. Interfaz por consola | `agente-proyectos` ([sección 1](#1-instalación-y-ejecución)); admite preguntas de seguimiento |
+| Explicar la librería o framework usado | [Sección 3](#3-decisiones-técnicas): SDK oficial de Gemini, sin framework de agentes, y por qué |
+| Entregable 1: repositorio con historial y código organizado | Commits por fase en este repositorio; tests automáticos en GitHub Actions; [tabla de módulos](#2-arquitectura) |
+| Entregable 2: README con instalación, arquitectura y decisiones, supuestos, limitaciones y costo para 50 consultores | Secciones [1](#1-instalación-y-ejecución), [2](#2-arquitectura), [3](#3-decisiones-técnicas), [6](#6-supuestos), [7](#7-limitaciones-conocidas) y [8](#8-estimación-de-costo-50-consultores) |
+| Entregable 3: fichas de los cuatro proyectos | [`data/fichas/`](data/fichas/) (JSON) |
+| Entregable 4: video | Se entrega aparte |
+| No incluir claves de API | `.env` está en `.gitignore`; solo se versiona [`.env.example`](.env.example) |
+| Opcional: interfaz web | [`web.py`](src/project_agent/web.py) y [`iniciar_web.bat`](iniciar_web.bat) |
 
 ---
 
@@ -163,6 +185,14 @@ limita a 50 filas. Si la consulta falla, el error vuelve al modelo para que la c
 `LIKE` se redefine para ignorar mayúsculas y tildes, porque el modelo escribe "Martin" o
 "credito" con frecuencia.
 
+**Memoria de conversación acotada.** El agente admite preguntas de seguimiento («¿y cuáles
+fueron sus lecciones?»). Solo recuerda las preguntas y respuestas finales de los últimos 6
+intercambios, no los resultados de las herramientas, para que el costo por pregunta no crezca
+sin límite; y el prompt le pide usar esa memoria solo para entender a qué se refiere el
+usuario, volviendo a consultar las herramientas para los datos. En la consola la memoria dura
+la sesión (`nueva` la reinicia); en la web la guarda el navegador y la envía en cada pregunta,
+así que el servidor no guarda estado y varios usuarios no se mezclan.
+
 **Interfaz web con FastAPI y una página propia, no Streamlit.** Es opcional: la consola
 cumple el requisito. Se eligió FastAPI porque se puede probar con tests automáticos sin
 llamar a la API (con un agente simulado) y deja una API REST reutilizable
@@ -217,10 +247,11 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
 
 ## 5. Validación
 
-- **Tests automáticos** (`python -m pytest`, 88 tests, sin consumir API): lectura de PDF y
+- **Tests automáticos** (`python -m pytest`, 91 tests, sin consumir API; se ejecutan en
+  GitHub Actions en Linux y Windows con cada push): lectura de PDF y
   Word, limpieza de tablas, secciones, búsqueda, base de datos, barreras del SQL, bucle del
-  agente con el modelo simulado, cadena de modelos de respaldo, interfaz web y **fidelidad de
-  las fichas generadas** (cada cifra existe en
+  agente con el modelo simulado, memoria de conversación, cadena de modelos de respaldo,
+  interfaz web y **fidelidad de las fichas generadas** (cada cifra existe en
   su informe; la ficha de la Cooperativa coincide con una ficha escrita a mano; las trampas
   conocidas quedan registradas como salvedades).
 - **Preguntas de validación**: [`docs/VALIDACION.md`](docs/VALIDACION.md) recoge 14 preguntas
@@ -262,8 +293,9 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
   informes; formatos muy distintos (varias columnas, tablas sin bordes) pueden requerir
   ajustes.
 - **SQL**: se rechaza cualquier consulta que contenga `;`, aunque esté dentro de un texto.
-- **Sin memoria de conversación**: cada pregunta se responde de forma independiente; las
-  preguntas de seguimiento ("¿y en el otro proyecto?") deben reformularse completas.
+- **Memoria de conversación limitada**: recuerda los últimos 6 intercambios (preguntas y
+  respuestas, no los resultados de las herramientas). En la web se pierde al recargar la
+  página.
 - **Extracción no determinista**: regenerar una ficha puede producir redacciones distintas;
   la verificación de cifras y los tests de fidelidad acotan ese riesgo.
 
@@ -307,6 +339,7 @@ cada pregunta, así que el consumo real debería quedar algo por debajo.
 ## 9. Estructura del repositorio
 
 ```text
+├── .github/workflows/       tests automáticos en GitHub Actions
 ├── data/
 │   ├── informes/            informes de cierre (entrada)
 │   └── fichas/              fichas generadas (JSON, entregable)
