@@ -55,6 +55,26 @@ class AgentAnswer:
     text: str
     tool_calls: list[ToolCallTrace] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)  # informes efectivamente recuperados por las herramientas
+    usage: Usage = field(default_factory=lambda: Usage())
+
+
+@dataclass
+class Usage:
+    """Consumo de la pregunta: base para estimar costos."""
+
+    llm_calls: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0  # incluye tokens de razonamiento, que se facturan como salida
+    models: list[str] = field(default_factory=list)
+
+    def add(self, response: types.GenerateContentResponse) -> None:
+        self.llm_calls += 1
+        meta = response.usage_metadata
+        if meta:
+            self.input_tokens += meta.prompt_token_count or 0
+            self.output_tokens += (meta.candidates_token_count or 0) + (meta.thoughts_token_count or 0)
+        if response.model_version and response.model_version not in self.models:
+            self.models.append(response.model_version)
 
 
 def _project_catalog(tools: ReportTools) -> str:
@@ -80,6 +100,7 @@ class ProjectAgent:
 
         for _ in range(MAX_STEPS):
             response = generate(contents, self.config)
+            answer.usage.add(response)
             calls = response.function_calls or []
             if not calls:
                 answer.text = (response.text or "").strip() or "No pude generar una respuesta."

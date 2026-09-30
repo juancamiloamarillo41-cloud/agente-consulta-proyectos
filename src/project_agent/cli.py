@@ -33,6 +33,11 @@ def render(answer: AgentAnswer) -> str:
     if answer.sources:
         lines.append("  Informes recuperados por las herramientas:")
         lines.extend(f"   - {source}" for source in answer.sources)
+    usage = answer.usage
+    lines.append(
+        f"  Modelo: {', '.join(usage.models) or '-'} · {usage.llm_calls} llamadas · "
+        f"{usage.input_tokens} tokens de entrada · {usage.output_tokens} de salida"
+    )
     return "\n".join(lines)
 
 
