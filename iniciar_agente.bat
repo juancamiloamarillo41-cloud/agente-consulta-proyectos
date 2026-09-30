@@ -12,8 +12,9 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-if not exist ".env" (
-    echo Falta el archivo .env con GEMINI_API_KEY. Copia .env.example como .env y agrega tu clave.
+rem Si no hay clave de Gemini, la pide en esta ventana, la valida y crea el archivo .env.
+".venv\Scripts\python.exe" -m project_agent.setup_env
+if errorlevel 1 (
     pause
     exit /b 1
 )
