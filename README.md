@@ -55,7 +55,8 @@ ruta: `.venv\Scripts\agente-proyectos-web.exe`.
 |---|---|
 | Consola interactiva del agente | `agente-proyectos` (o `python -m project_agent`) |
 | Una sola pregunta | `agente-proyectos "¿Qué hicimos en el sector salud?"` |
-| Interfaz web (opcional) | `agente-proyectos-web` y abrir http://127.0.0.1:8000 (la terminal debe quedar abierta mientras se usa) |
+| Interfaz web (opcional), en Windows | **Doble clic en `iniciar_web.bat`**: arranca el servidor y abre el navegador; al cerrar la ventana se detiene |
+| Interfaz web (opcional), desde la terminal | `agente-proyectos-web` (abre el navegador; `--sin-navegador` para no abrirlo) |
 | Generar fichas de informes nuevos y reconstruir la base | `python -m project_agent.extraction` |
 | Regenerar todas las fichas (llama al LLM) | `python -m project_agent.extraction --force` |
 | Ejecutar los tests (sin LLM) | `python -m pytest` |
@@ -313,6 +314,7 @@ cada pregunta, así que el consumo real debería quedar algo por debajo.
 │   ├── PLAN.md              plan de trabajo y trampas detectadas en los informes
 │   ├── VALIDACION.md        preguntas de validación y resultados
 │   └── validacion/          preguntas (JSON) y transcripciones del agente
+├── iniciar_web.bat          lanzador de la interfaz web con doble clic (Windows)
 ├── scripts/run_validation.py
 ├── src/project_agent/       código (ver tabla de módulos); static/ tiene la página web
 └── tests/                   tests automáticos y ficha golden escrita a mano
