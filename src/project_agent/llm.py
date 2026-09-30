@@ -19,7 +19,10 @@ from google.genai import errors, types
 
 from project_agent.config import ROOT_DIR
 
-DEFAULT_MODELS = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"]
+# Se excluyen a propósito los modelos "lite": en la validación asignaron cifras a indicadores
+# equivocados. Es preferible un error de cuota a una respuesta incorrecta.
+# Cada modelo tiene su propia cuota diaria en la capa gratuita, así que la cadena también amplía la capacidad.
+DEFAULT_MODELS = ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash"]
 RETRYABLE_STATUS = {429, 500, 503, 504}
 MAX_ATTEMPTS_PER_MODEL = 4
 

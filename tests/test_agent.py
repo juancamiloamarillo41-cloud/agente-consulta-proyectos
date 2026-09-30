@@ -49,6 +49,13 @@ def test_sql_tool_adds_sources(tools):
     assert output.sources == [COOP_FILE]
 
 
+def test_sql_tool_warns_when_indicator_values_come_without_names(tools):
+    unnamed = tools.run("consultar_fichas_sql", {"sql": "SELECT codigo_proyecto, resultado FROM indicadores"})
+    named = tools.run("consultar_fichas_sql", {"sql": "SELECT codigo_proyecto, nombre, resultado FROM indicadores"})
+    assert "advertencia" in unnamed.payload
+    assert "advertencia" not in named.payload
+
+
 def test_sql_tool_returns_errors_to_the_model(tools):
     output = tools.run("consultar_fichas_sql", {"sql": "DELETE FROM proyectos"})
     assert "error" in output.payload

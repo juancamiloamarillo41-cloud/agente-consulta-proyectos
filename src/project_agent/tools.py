@@ -67,8 +67,9 @@ class ReportTools:
                     "Ejecuta una consulta SQL de solo lectura (SQLite) sobre las fichas estructuradas de los "
                     "proyectos. Úsala para listar, filtrar, contar o comparar proyectos: por sector, cliente, "
                     "gerente, fechas, estado, metodologías, indicadores y cumplimiento de metas, lecciones, "
-                    "recomendaciones y salvedades. Usa LIKE con comodines para textos; LIKE no ignora tildes, así que "
-                    "busca fragmentos sin tildes (p. ej. sector LIKE '%salud%', nombre LIKE '%espera%'). "
+                    "recomendaciones y salvedades. Para textos usa LIKE con comodines (ignora mayúsculas y tildes, "
+                    "p. ej. sector LIKE '%salud%'). Para resultados y cumplimiento de metas consulta la tabla "
+                    "indicadores (linea_base, meta, resultado, estado_meta, notas): ahí está qué indicador se cumplió y cuál no. "
                     "Incluye codigo_proyecto en el SELECT para que el resultado traiga el informe fuente.\n\n"
                     f"Esquema:\n{describe_schema(self.db_path)}"
                 ),
@@ -128,5 +129,11 @@ class ReportTools:
         }
         if not result.rows:
             payload["mensaje"] = "La consulta no devolvió filas."
+        elif "indicadores" in sql.lower() and "nombre" not in result.columns:
+            # Sin el nombre, el modelo tiende a inventar a qué indicador corresponde cada valor.
+            payload["advertencia"] = (
+                "Las filas no incluyen el nombre del indicador. No atribuyas estos valores a ningún "
+                "indicador: repite la consulta incluyendo la columna nombre."
+            )
         summary = f"{len(result.rows)} filas" + (" (truncado)" if result.truncated else "")
         return ToolOutput(payload, summary, sorted(set(result.sources.values())))
