@@ -24,7 +24,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from project_agent.agent import AgentAnswer, ProjectAgent
+from project_agent.agent import MAX_HISTORY_TURNS, AgentAnswer, ProjectAgent
 from project_agent.llm import LLMError
 from project_agent.storage.query import run_readonly_query
 
@@ -42,8 +42,15 @@ FRIENDLY_ERRORS = {
 _LIST_WITHOUT_BLANK_LINE = re.compile(r"^(?!\s*(?:[-*+]|\d+\.)\s)(\S.*)\n(?=\s*(?:[-*+]|\d+\.)\s)", re.MULTILINE)
 
 
+class PreviousTurn(BaseModel):
+    pregunta: str = Field(max_length=MAX_QUESTION_CHARS)
+    respuesta: str = Field(max_length=20_000)
+
+
 class Question(BaseModel):
     pregunta: str = Field(min_length=1, max_length=MAX_QUESTION_CHARS)
+    # El navegador guarda la conversación y la envía en cada pregunta: el servidor no guarda estado.
+    historial: list[PreviousTurn] = Field(default_factory=list, max_length=50)
 
 
 def render_markdown(text: str) -> str:
@@ -104,7 +111,8 @@ def create_app(agent_factory: Callable[[], ProjectAgent] = ProjectAgent) -> Fast
             raise HTTPException(status_code=422, detail="La pregunta está vacía.")
         start = time.perf_counter()
         try:
-            answer = agent().ask(text)
+            history = [(t.pregunta, t.respuesta) for t in question.historial[-MAX_HISTORY_TURNS:]]
+            answer = agent().ask(text, history)
         except LLMError as exc:
             # Cuota agotada o modelo saturado: mensaje claro para el usuario y detalle técnico aparte.
             detail = {"mensaje": FRIENDLY_ERRORS.get(exc.reason, FRIENDLY_ERRORS["otro"]), "tecnico": str(exc)[:400]}

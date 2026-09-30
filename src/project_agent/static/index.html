@@ -51,6 +51,13 @@
   }
   @media (prefers-color-scheme: dark) { button.primary { color: #0e1726; } }
   button.primary:disabled { opacity: .55; cursor: wait; }
+  .actions { display: flex; gap: 8px; }
+  button.secondary {
+    background: transparent; color: var(--accent); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; font: inherit; cursor: pointer;
+  }
+  button.secondary:hover { border-color: var(--accent); }
+  .divider { text-align: center; font-size: .78rem; color: var(--muted); }
   .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .examples button {
     font: inherit; font-size: .82rem; padding: 4px 10px; border-radius: 999px; cursor: pointer;
@@ -105,8 +112,11 @@
       <label for="question" class="section-title" style="display:block;margin-top:0">Tu pregunta</label>
       <textarea id="question" maxlength="1000" placeholder="Por ejemplo: ¿qué lecciones aprendidas se repiten entre proyectos?" required></textarea>
       <div class="form-row">
-        <span class="hint">Ctrl + Enter para enviar · cada respuesta tarda entre 10 y 40 s</span>
-        <button class="primary" id="submit" type="submit">Preguntar</button>
+        <span class="hint">Ctrl + Enter para enviar · admite preguntas de seguimiento · cada respuesta tarda entre 10 y 40 s</span>
+        <div class="actions">
+          <button class="secondary" id="reset" type="button" hidden>Nueva conversación</button>
+          <button class="primary" id="submit" type="submit">Preguntar</button>
+        </div>
       </div>
       <div class="examples" id="examples"></div>
     </form>
@@ -132,6 +142,16 @@ const form = document.getElementById("form");
 const input = document.getElementById("question");
 const submit = document.getElementById("submit");
 const results = document.getElementById("results");
+const resetButton = document.getElementById("reset");
+// Conversación actual: se envía al servidor en cada pregunta para que el agente entienda los seguimientos.
+let history = [];
+
+resetButton.addEventListener("click", () => {
+  history = [];
+  resetButton.hidden = true;
+  results.prepend(el("div", { class: "divider", text: "── Nueva conversación ──" }));
+  input.focus();
+});
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -212,7 +232,7 @@ async function ask(question) {
     const response = await fetch("/api/preguntar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pregunta: question }),
+      body: JSON.stringify({ pregunta: question, historial: history }),
     });
     const data = await response.json();
     if (!response.ok) {
@@ -222,6 +242,8 @@ async function ask(question) {
       throw error;
     }
     loading.replaceWith(renderAnswer(question, data));
+    history.push({ pregunta: question, respuesta: data.respuesta_texto });
+    resetButton.hidden = false;
   } catch (error) {
     const card = el("article", { class: "panel error" }, [
       el("p", { class: "question", text: question }),

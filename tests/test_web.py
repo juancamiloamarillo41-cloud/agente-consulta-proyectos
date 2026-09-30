@@ -16,10 +16,11 @@ COOP_FILE = "Informe_Cierre_PC-2025-014_Cooperativa_Horizonte_Andino.pdf"
 class FakeAgent:
     def __init__(self, tools, answer=None, error=None):
         self.tools, self.answer, self.error = tools, answer, error
-        self.questions = []
+        self.questions, self.histories = [], []
 
-    def ask(self, question):
+    def ask(self, question, history=()):
         self.questions.append(question)
+        self.histories.append(list(history))
         if self.error:
             raise self.error
         return self.answer
@@ -69,6 +70,14 @@ def test_ask_returns_answer_trace_sources_and_usage(tools):
 def test_invalid_questions_are_rejected(tools, payload):
     client = TestClient(create_app(lambda: FakeAgent(tools, answer=_answer())))
     assert client.post("/api/preguntar", json=payload).status_code == 422
+
+
+def test_conversation_history_is_passed_to_the_agent(tools):
+    fake = FakeAgent(tools, answer=_answer())
+    client = TestClient(create_app(lambda: fake))
+    history = [{"pregunta": "¿Qué hicimos en retail?", "respuesta": "PC-2026-006, La Canasta."}]
+    client.post("/api/preguntar", json={"pregunta": "¿Y sus lecciones?", "historial": history})
+    assert fake.histories == [[("¿Qué hicimos en retail?", "PC-2026-006, La Canasta.")]]
 
 
 def test_model_unavailable_returns_503_with_friendly_message(tools):
