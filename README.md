@@ -1,0 +1,292 @@
+# Agente de consulta de proyectos — Procesa Consultores
+
+Agente en Python que responde en lenguaje natural preguntas de consultores sobre los
+informes de cierre de proyectos anteriores. Cada respuesta cita el informe del que
+proviene, muestra qué herramientas se usaron para llegar a ella y, si algo no está en
+los informes, lo dice en lugar de inventarlo.
+
+```text
+> ¿Cuál es el OEE de toda la planta de Plásticos del Pacífico?
+
+El alcance del proyecto PC-2025-027 se limitó exclusivamente a la Línea 1 de inyección,
+por lo que no se cuenta con una cifra de OEE que represente a la planta en su conjunto.
+El OEE de la Línea 1 fue del 71% (línea base 58%). [...] Según los registros del cliente,
+el OEE de la Línea 2 se mantuvo alrededor del 63%, pero Procesa Consultores no validó
+dicha cifra ni su metodología de cálculo.
+
+Fuentes: Informe_Cierre_PC-2025-027_Plasticos_del_Pacifico.pdf (1. Resumen ejecutivo, 4. Alcance)
+
+── Trazabilidad ─────────────────────────────
+  1. consultar_fichas_sql: SELECT * FROM indicadores WHERE codigo_proyecto = 'PC-2025-027' AND nombre LIKE '%OEE%'
+     → 1 filas [0.00s]
+  2. buscar_en_informes: {"consulta": "OEE planta total alcance", "codigo_proyecto": "PC-2025-027"}
+     → 4 fragmentos (PC-2025-027 4. Alcance; PC-2025-027 1. Resumen ejecutivo; ...)
+  Informes recuperados por las herramientas:
+   - Informe_Cierre_PC-2025-027_Plasticos_del_Pacifico.pdf
+```
+
+---
+
+## 1. Instalación y ejecución
+
+Requisitos: Python 3.10 o superior y una clave de Google Gemini
+([Google AI Studio](https://aistudio.google.com/apikey)).
+
+```bash
+git clone https://github.com/juancamiloamarillo41-cloud/agente-consulta-proyectos.git
+cd agente-consulta-proyectos
+python -m venv .venv
+.venv\Scripts\activate            # Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .                  # instala el paquete (src/project_agent) en modo editable
+copy .env.example .env            # Linux/macOS: cp .env.example .env
+# editar .env y escribir la clave en GEMINI_API_KEY
+python -c "from project_agent.storage.repository import rebuild_db_from_json; rebuild_db_from_json()"
+```
+
+El último comando crea `data/fichas.db` a partir de las fichas JSON versionadas (no consume API).
+
+| Acción | Comando |
+|---|---|
+| Consola interactiva del agente | `agente-proyectos` (o `python -m project_agent`) |
+| Una sola pregunta | `agente-proyectos "¿Qué hicimos en el sector salud?"` |
+| Generar fichas de informes nuevos y reconstruir la base | `python -m project_agent.extraction` |
+| Regenerar todas las fichas (llama al LLM) | `python -m project_agent.extraction --force` |
+| Ejecutar los tests (sin LLM) | `python -m pytest` |
+| Set de preguntas de validación | `python scripts/run_validation.py` |
+
+Las fichas ya generadas están versionadas en [`data/fichas/`](data/fichas/).
+
+Para agregar un informe nuevo: copiarlo (PDF o Word) en `data/informes/` y ejecutar
+`python -m project_agent.extraction`. Solo se procesan los informes que aún no tienen ficha.
+
+## 2. Arquitectura
+
+```text
+data/informes/*.pdf|*.docx
+        │
+        ▼
+ ingestion/   PDF (PyMuPDF) y Word (python-docx) → bloques: encabezado / texto / tabla
+        │     → fragmentos por sección, con cita (archivo, sección, páginas)
+        ├─────────────► search.py (BM25) ───────────────► herramienta buscar_en_informes
+        ▼
+ extraction.py  LLM con salida estructurada (esquema = ficha.py)
+        │       → verificación de cifras contra el informe → data/fichas/*.json
+        ▼
+ storage/     SQLite (schema.sql) ───────────────────────► herramienta consultar_fichas_sql
+        ▼                                                     (solo lectura)
+ agent.py     bucle de uso de herramientas con Gemini + reglas anti-alucinación + traza
+        ▼
+ cli.py       consola: respuesta, fuentes, herramientas usadas y consumo de tokens
+```
+
+| Módulo | Responsabilidad |
+|---|---|
+| [`ingestion/loaders.py`](src/project_agent/ingestion/loaders.py) | Lee PDF y Word a una representación común; detecta encabezados por tipografía, descarta pies de página, convierte tablas a markdown |
+| [`ingestion/tables.py`](src/project_agent/ingestion/tables.py) | Limpia tablas, incluidas las celdas combinadas de documentos exportados desde Word |
+| [`ingestion/sections.py`](src/project_agent/ingestion/sections.py) | Divide cada informe en fragmentos citables por sección |
+| [`search.py`](src/project_agent/search.py) | Índice BM25 con normalización para español (tildes, plurales, palabras vacías) |
+| [`ficha.py`](src/project_agent/ficha.py) | Modelo Pydantic de la ficha: esquema del LLM, validación y estructura de la base |
+| [`extraction.py`](src/project_agent/extraction.py) | Genera las fichas con el LLM y verifica sus cifras contra el informe |
+| [`storage/`](src/project_agent/storage/) | Esquema SQLite, escritura idempotente y consulta SQL de solo lectura |
+| [`tools.py`](src/project_agent/tools.py) | Las dos herramientas del agente: declaración, ejecución y resumen para la traza |
+| [`agent.py`](src/project_agent/agent.py) | Bucle de uso de herramientas, prompt de sistema, traza y consumo |
+| [`llm.py`](src/project_agent/llm.py) | Único punto de contacto con el proveedor: reintentos y cadena de modelos de respaldo |
+| [`cli.py`](src/project_agent/cli.py) | Interfaz de consola |
+
+## 3. Decisiones técnicas
+
+**Sin framework de agentes.** El bucle del agente ocupa unas 40 líneas en
+[`agent.py`](src/project_agent/agent.py): el modelo pide una herramienta, el código la
+ejecuta, registra la traza y devuelve el resultado, hasta que el modelo responde en texto.
+Hay un máximo de 6 pasos; si se alcanza, una última llamada con las herramientas
+desactivadas obliga al modelo a responder con lo que ya obtuvo. LangChain o LlamaIndex agregarían dependencias y capas de abstracción sin
+aportar nada que este caso necesite, y harían más difícil explicar qué ocurre en cada paso.
+Se usa directamente el SDK oficial `google-genai`.
+
+**Proveedor: Google Gemini.** Tiene capa gratuita y soporta salida estructurada con JSON
+Schema y llamadas a funciones. Todo el acceso pasa por [`llm.py`](src/project_agent/llm.py),
+así que cambiar de proveedor afecta a un solo módulo. Hay una cadena de modelos Flash
+(`gemini-3.5-flash` → `3.8` → `3.7` → `3.6` → `2.5`, configurable con la variable
+`GEMINI_MODELS`): ante errores transitorios (503 por demanda) se reintenta con espera
+exponencial y, si un modelo agotó su cuota diaria, se pasa al siguiente. Los modelos
+"lite" se excluyeron a propósito: en la validación asignaron cifras a indicadores
+equivocados, y es preferible un error de cuota a una respuesta incorrecta.
+
+**Lectura de documentos con estructura, no texto plano.** Los indicadores viven en tablas;
+si la tabla se aplana, "18% | ≤ 10% | 11%" pierde a qué columna pertenece cada valor. Por
+eso las tablas se convierten a markdown conservando filas y columnas, y los encabezados se
+detectan por tamaño y negrita de la fuente, no por numeración. El informe de la Clínica es
+un PDF exportado desde Word, con celdas combinadas que generan columnas fantasma; se
+colapsan a las columnas lógicas de la cabecera. Se soporta `.docx` además de PDF, porque el
+enunciado anuncia un informe en Word.
+
+**Fragmentos por sección.** Se corta por sección (1. Resumen, 5. Resultados…) y no cada N
+palabras. La sección es la unidad natural de cita y mantiene junto el contexto que
+condiciona los datos: la advertencia "todos los resultados corresponden a la Línea 1" o la
+nota "el 24% es el dato oficial" quedan en el mismo fragmento que su tabla.
+
+**Búsqueda BM25 en lugar de embeddings.** El corpus es pequeño (37 fragmentos), las preguntas
+usan el vocabulario de los informes (OEE, SMED, quiebre de stock) y BM25 no necesita otro
+servicio ni costo por consulta. Es determinista y explicable. El agente compensa la falta de
+sinónimos reformulando la búsqueda. Con cientos de informes convendría una búsqueda híbrida
+(BM25 + embeddings).
+
+**Dos fuentes complementarias.** La base de fichas responde bien a preguntas de listar,
+filtrar, contar y comparar ("¿qué proyectos no cumplieron metas?"); el texto responde a
+preguntas de detalle y contexto ("¿cómo se redujeron las microparadas?"). El agente decide
+cuál usar, o ambas, según la pregunta; la descripción de cada herramienta indica para qué
+sirve y la de SQL incluye el esquema completo.
+
+**Las fichas JSON son la fuente de verdad; SQLite se reconstruye.** Los JSON se versionan en
+Git (son entregable y son legibles en una revisión). La base se regenera desde ellos sin
+llamar al LLM.
+
+**SQL generado por el modelo tratado como entrada no confiable.** Tres barreras
+independientes: validación de una sola sentencia `SELECT`/`WITH`, conexión SQLite en modo
+solo lectura (`mode=ro`) y un autorizador que solo permite operaciones de lectura. Además se
+limita a 50 filas. Si la consulta falla, el error vuelve al modelo para que la corrija.
+`LIKE` se redefine para ignorar mayúsculas y tildes, porque el modelo escribe "Martin" o
+"credito" con frecuencia.
+
+**Medidas contra respuestas inventadas.**
+1. Prompt de sistema con reglas explícitas: responder solo con resultados de herramientas,
+   citar el archivo, decir cuándo algo no está, usar la cifra oficial y mencionar salvedades.
+2. Campo `salvedades` en la ficha, que registra lo que evita malinterpretar datos: cifras
+   preliminares, alcance limitado, resultados no atribuibles, datos no validados, pendientes
+   y documentos externos no incluidos.
+3. Verificación determinista de la extracción: cada cifra de los indicadores debe existir en
+   el informe. Detectó, por ejemplo, variaciones que el modelo había calculado por su cuenta.
+4. Advertencias de la herramienta SQL: si una consulta a `indicadores` no trae la columna
+   `nombre`, o las filas no traen `codigo_proyecto`, la herramienta pide al modelo que no
+   atribuya esos valores y repita la consulta. Surgió de un error real de la validación:
+   sin el nombre, el modelo etiquetó "OEE 95%" a la Calidad.
+5. Las citas de sección solo se permiten cuando vienen de la búsqueda en texto, para que el
+   modelo no invente números de sección.
+6. Las fuentes que muestra la traza las calcula el código a partir de los resultados de las
+   herramientas, no el modelo.
+
+## 4. Diseño de la ficha
+
+Cada grupo de campos responde a un tipo de pregunta que haría un consultor:
+
+| Grupo | Campos | Preguntas que habilita |
+|---|---|---|
+| Identificación | código, título, cliente, descripción del cliente, sector, subsector, ubicación | ¿Qué hicimos en salud? ¿Con qué clientes de retail trabajamos? |
+| Ejecución | fechas de inicio, fin y aceptación, duración, estado, gerente, equipo, contraparte | ¿Qué proyectos gerenció X? ¿Cuál fue el más largo? ¿Cuáles cerraron con pendientes? |
+| Contenido | problema, resumen, objetivos, alcance, metodologías, iniciativas | ¿Dónde usamos SMED? ¿Cómo abordamos un problema de tiempos de espera? |
+| Resultados | indicadores (línea base, meta, resultado, variación, valores numéricos, estado de meta, notas), objetivos cumplidos/totales | ¿Qué resultados obtuvimos? ¿Qué proyectos no cumplieron metas? |
+| Aprendizajes | lecciones, recomendaciones | ¿Qué lecciones debo tener en cuenta? |
+| Salvedades | tipo y descripción | Evita dar por buenas cifras preliminares, no validadas o fuera de alcance |
+| Trazabilidad | archivo fuente | Permite citar cada fila que devuelve SQL |
+
+Decisiones de detalle:
+- Los valores de los indicadores se guardan **como texto, tal como en el informe** ("≤ 6",
+  "0 de 3", "39,5 min"), para no perder matices, y además como número cuando es posible
+  (`linea_base_valor`, `resultado_valor`) para poder comparar u ordenar.
+- `estado_meta` usa cuatro valores (`cumplida`, `parcialmente_cumplida`, `no_cumplida`,
+  `sin_meta`) porque los informes usan los cuatro casos.
+- Las listas (indicadores, lecciones, metodologías…) van en tablas hijas para poder filtrarlas
+  y agregarlas con SQL.
+
+Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
+
+## 5. Validación
+
+- **Tests automáticos** (`python -m pytest`, 71 tests, sin consumir API): lectura de PDF y
+  Word, limpieza de tablas, secciones, búsqueda, base de datos, barreras del SQL, bucle del
+  agente con el modelo simulado y **fidelidad de las fichas generadas** (cada cifra existe en
+  su informe; la ficha de la Cooperativa coincide con una ficha escrita a mano; las trampas
+  conocidas quedan registradas como salvedades).
+- **Preguntas de validación**: [`docs/VALIDACION.md`](docs/VALIDACION.md) recoge 14 preguntas
+  de consultor —incluidas 6 preguntas trampa— con la respuesta esperada, redactada a partir de
+  los informes, y la respuesta real del agente. La primera ronda destapó errores reales (por
+  ejemplo, cifras atribuidas al indicador equivocado); cada uno se diagnosticó con la traza y se
+  corrigió. En la segunda ronda las 9 preguntas ejecutadas fueron correctas, incluidas las 6
+  trampas.
+
+## 6. Supuestos
+
+- Los informes son la única fuente de verdad. El agente no usa conocimiento general sobre los
+  clientes ni los sectores, aunque podría completar la respuesta.
+- Cuando un informe distingue una cifra preliminar de una oficial, vale la oficial.
+- Un objetivo "parcialmente cumplido" no cuenta como cumplido.
+- El enunciado indica que el informe de la Clínica llega en Word; en el material recibido es
+  un PDF exportado desde Word. Se soportan ambos formatos.
+- Los informes siguen la estructura general observada (portada con datos, secciones
+  numeradas, tablas de indicadores), aunque no idéntica. El código de proyecto sigue el
+  patrón `PC-AAAA-NNN`.
+- Los usuarios son consultores internos que preguntan en español, por consola.
+
+## 7. Limitaciones conocidas
+
+- **Cuota gratuita de Gemini**: unas 20 peticiones diarias por modelo, y cada pregunta usa
+  entre 2 y 4. La cadena de cinco modelos alarga el margen (unas 30 preguntas al día), pero
+  un uso real requiere la capa de pago. Al cambiar de modelo a mitad de una pregunta la
+  respuesta sigue siendo válida, aunque su estilo puede variar.
+- **Privacidad**: en la capa gratuita, Google puede usar los datos enviados para mejorar sus
+  productos. Con informes reales de clientes debe usarse la capa de pago (o Vertex AI), que
+  no los usa para entrenamiento.
+- **Variabilidad del modelo**: la misma pregunta puede recibir respuestas con distinto nivel
+  de detalle; por ejemplo, no siempre menciona la cifra preliminar descartada, aunque sí usa
+  la oficial.
+- **Búsqueda léxica**: sinónimos que no aparecen en los informes pueden no encontrarse en la
+  primera búsqueda; el agente reformula, pero no está garantizado.
+- **PDF escaneados**: no se hace OCR; un informe escaneado sin capa de texto no se puede leer.
+- **Heurísticas de estructura**: la detección de encabezados y tablas funciona con estos
+  informes; formatos muy distintos (varias columnas, tablas sin bordes) pueden requerir
+  ajustes.
+- **SQL**: se rechaza cualquier consulta que contenga `;`, aunque esté dentro de un texto.
+- **Sin memoria de conversación**: cada pregunta se responde de forma independiente; las
+  preguntas de seguimiento ("¿y en el otro proyecto?") deben reformularse completas.
+- **Extracción no determinista**: regenerar una ficha puede producir redacciones distintas;
+  la verificación de cifras y los tests de fidelidad acotan ese riesgo.
+
+## 8. Estimación de costo (50 consultores)
+
+**Consumo medido.** Cada respuesta del agente registra sus llamadas y tokens (se ven en la
+traza). En la ronda 2 de validación, con modelos Flash, una pregunta típica consumió entre
+2 y 4 llamadas, **unos 9.500 tokens de entrada y 1.000 de salida** (incluidos los de
+razonamiento). La entrada pesa más porque en cada paso se reenvían el prompt de sistema, el
+esquema de la base (~1.500 tokens) y los fragmentos recuperados.
+
+**Supuestos del escenario.** 50 consultores × 10 preguntas al día × 22 días hábiles =
+**11.000 preguntas al mes**, con 10.000 tokens de entrada y 1.000 de salida por pregunta
+(redondeo conservador de lo medido).
+
+| Modelo (capa de pago, precios de ai.google.dev al 30-09-2026) | Entrada / salida por 1M tokens | Costo por pregunta | **Costo mensual** |
+|---|---|---|---|
+| gemini-3.5-flash (modelo principal) | USD 1,50 / 9,00 | USD 0,024 | **≈ USD 264** |
+| gemini-3.6/3.7/3.8-flash (precio promocional hasta el 31-12-2026) | USD 0,75 / 3,75 | USD 0,011 | ≈ USD 124 |
+| gemini-3.6/3.7/3.8-flash (precio desde 2027) | USD 1,50 / 7,50 | USD 0,023 | ≈ USD 248 |
+| gemini-2.5-flash | USD 0,30 / 2,50 | USD 0,006 | ≈ USD 61 |
+
+- **Rango razonable: USD 60 a 270 al mes** (entre USD 1,20 y 5,30 por consultor), según el
+  modelo. Si el uso real fuera de 20 preguntas diarias por consultor, el costo se duplica.
+- **Extracción de fichas** (estimado, no medido): unos 6.000 tokens de entrada y 4.000 de
+  salida por informe; menos de USD 0,05 por informe. Procesar 100 informes nuevos al año cuesta menos de USD 5.
+- **Infraestructura:** SQLite y la búsqueda BM25 corren localmente, sin servicios adicionales
+  (ni base vectorial ni embeddings). Para un despliegue compartido bastaría una máquina
+  virtual pequeña (≈ USD 10-30 al mes).
+- **La capa gratuita no alcanza para este uso:** unas 20 peticiones al día por modelo, es
+  decir, unas 6 preguntas diarias por modelo para toda la firma.
+- **Cómo reducirlo:** el prefijo repetido (prompt y esquema) se beneficia del caché de
+  contexto de Gemini (USD 0,075 por 1M tokens cacheados, frente a 0,75-1,50); limitar a 3
+  los fragmentos devueltos por búsqueda; usar `gemini-2.5-flash` para preguntas simples de
+  SQL. No se recomienda bajar a modelos "lite": en la validación atribuyeron cifras a
+  indicadores equivocados.
+
+## 9. Estructura del repositorio
+
+```text
+├── data/
+│   ├── informes/            informes de cierre (entrada)
+│   └── fichas/              fichas generadas (JSON, entregable)
+├── docs/
+│   ├── PLAN.md              plan de trabajo y trampas detectadas en los informes
+│   ├── VALIDACION.md        preguntas de validación y resultados
+│   └── validacion/          preguntas (JSON) y transcripciones del agente
+├── scripts/run_validation.py
+├── src/project_agent/       código (ver tabla de módulos)
+└── tests/                   tests automáticos y ficha golden escrita a mano
+```
