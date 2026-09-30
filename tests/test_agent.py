@@ -71,6 +71,14 @@ def test_sql_tool_warns_when_rows_are_not_tied_to_a_project(tools):
     assert "advertencia" not in count.payload
 
 
+def test_single_project_filter_identifies_the_source(tools):
+    output = tools.run(
+        "consultar_fichas_sql", {"sql": "SELECT titulo, descripcion FROM lecciones WHERE codigo_proyecto = 'PC-2025-014'"}
+    )
+    assert output.sources == [COOP_FILE]
+    assert "advertencia" not in output.payload
+
+
 def test_sql_tool_returns_errors_to_the_model(tools):
     output = tools.run("consultar_fichas_sql", {"sql": "DELETE FROM proyectos"})
     assert "error" in output.payload

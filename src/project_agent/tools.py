@@ -138,7 +138,7 @@ class ReportTools:
                     "Las filas no incluyen el nombre del indicador: no atribuyas estos valores a ningún "
                     "indicador; repite la consulta incluyendo la columna nombre."
                 )
-            identifies_project = {"codigo_proyecto", "archivo_fuente"} & set(result.columns)
+            identifies_project = {"codigo_proyecto", "archivo_fuente"} & set(result.columns) or result.sources
             if not identifies_project and len(result.columns) > 1:
                 warnings.append(
                     "Las filas no indican a qué proyecto pertenecen: para atribuir datos a un proyecto, "

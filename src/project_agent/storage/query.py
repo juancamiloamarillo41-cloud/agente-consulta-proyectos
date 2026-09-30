@@ -22,6 +22,8 @@ from pathlib import Path
 from project_agent.config import DB_PATH, SQL_MAX_ROWS
 from project_agent.text import normalize
 
+PROJECT_CODE_RE = re.compile(r"PC-\d{4}-\d{3}")
+
 _ALLOWED_ACTIONS = {
     sqlite3.SQLITE_SELECT,
     sqlite3.SQLITE_READ,
@@ -134,7 +136,14 @@ def run_readonly_query(sql: str, db_path: str | Path = DB_PATH, max_rows: int = 
             idx = columns.index(column)
             return {row[idx] for row in rows if row[idx]}
 
-        sources = _project_sources(db_path, values("codigo_proyecto"), values("archivo_fuente"))
+        codes, files = values("codigo_proyecto"), values("archivo_fuente")
+        if rows and not codes and not files:
+            # Sin columnas que identifiquen el proyecto, una consulta filtrada por un único código
+            # (WHERE codigo_proyecto = 'PC-2026-006') también identifica de qué informe son las filas.
+            mentioned = set(PROJECT_CODE_RE.findall(statement))
+            if len(mentioned) == 1:
+                codes = mentioned
+        sources = _project_sources(db_path, codes, files)
         return QueryResult(columns, rows, truncated, sources)
     finally:
         conn.close()
