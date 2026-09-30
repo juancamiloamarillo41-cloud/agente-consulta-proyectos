@@ -41,9 +41,11 @@ se agregó un tiempo límite de 90 s por petición.
 
 ## Ronda 2: resultados con las correcciones
 
-Transcripciones en [`validacion/transcripciones/`](validacion/transcripciones/) (las de la
-ronda 1 están en [`ronda1/`](validacion/transcripciones/ronda1/)). Esta ronda se ejecutó con
-modelos Flash completos (3.6, 3.7, 3.8 y 3-preview), hasta agotar la cuota gratuita del día.
+Transcripciones en [`validacion/transcripciones/`](validacion/transcripciones/): allí queda la
+última ejecución de cada pregunta (las de la ronda 1 están en
+[`ronda1/`](validacion/transcripciones/ronda1/)). Esta ronda se ejecutó con modelos Flash
+completos (3.6, 3.7, 3.8 y 3-preview), hasta agotar la cuota gratuita del día; las preguntas
+marcadas "ronda 3" se ejecutaron después, con una clave nueva.
 
 | # | Pregunta (resumida) | Resultado | Observaciones |
 |---|---|---|---|
@@ -53,18 +55,19 @@ modelos Flash completos (3.6, 3.7, 3.8 y 3-preview), hasta agotar la cuota gratu
 | 4 | Proyectos de minería | ✅ Correcta | "Los informes no contienen..." y "Fuentes: ninguna" |
 | 5 | Aumento de colocación gracias al proyecto | ✅ Correcta | 9%, pero no atribuible al proyecto (campaña comercial paralela) |
 | 6 | Presupuesto del proyecto de Plásticos | ✅ Correcta | No está en los informes. En la primera ejecución de esta ronda agotó el límite de pasos buscando; tras acotar la regla de verificación, respondió bien en 5 llamadas |
-| 7 | Proyectos de Martín Aguirre | ⏸ Sin ejecutar (cuota) | En la ronda 1 fue correcta (Plásticos, Manufactura; Clínica, Salud) tras un reintento por la tilde, ya corregido |
+| 7 | Proyectos de Martín Aguirre | ✅ Correcta (ronda 3) | Plásticos (Manufactura) y Clínica (Salud), en una sola consulta: el `LIKE` sin tildes ya funciona |
 | 8 | Proyectos que no cumplieron metas y por qué | ✅ Correcta (corregida desde la ronda 1) | Abandono 11% vs ≤ 10%; La Canasta: integración 0 de 3 (ERP y proveedor) y 31 días vs ≤ 30 (29 sin licores). Presenta la concentración del abandono en microcrédito rural como "razón", cuando el informe la plantea como foco a investigar. Citó una sección inexistente |
-| 9 | Proyecto más largo | ⏸ Sin ejecutar (cuota) | En la ronda 1 fue correcta (La Canasta, 25 semanas) |
-| 10 | Cómo se redujeron las microparadas | ⏸ Sin ejecutar (cuota) | En la ronda 1 fue correcta (tolvas con sensores, secado de resina, registro en tablet) |
+| 9 | Proyecto más largo | ✅ Correcta (ronda 3) | La Canasta, 25 semanas (2 de marzo al 21 de agosto de 2026) |
+| 10 | Cómo se redujeron las microparadas | ✅ Correcta (ronda 3) | Tolvas con sensores de nivel, secuencia de secado de resina, registro en tablet con 24 causas y reunión diaria; 21 h/mes (17%) en la línea base; aclara que es solo la Línea 1 |
 | 11 | Proyectos con SMED y su resultado | ✅ Correcta (corregida desde la ronda 1) | Cambio de formato 95 → 38 min; OEE 58% → 71%, cada cifra con su indicador. Citó secciones con número incorrecto |
 | 12 | Lecciones que se repiten | ✅ Correcta | Mandos medios (Cooperativa y Plásticos), calidad de datos (los cuatro), participación de actores clave; atribución por `codigo_proyecto` |
-| 13 | Recomendaciones para un proyecto de reposición | ⏸ Sin ejecutar (cuota) | — |
-| 14 | Productividad de analistas | ⏸ Sin ejecutar (cuota) | — |
+| 13 | Recomendaciones para un proyecto de reposición | ✅ Correcta (ronda 3) | Datos maestros (15% de códigos, 3 semanas), dependencias de ERP y proveedores, administradores de tienda, conteos cíclicos, revisión trimestral; advierte del Informe de Diagnóstico no disponible |
+| 14 | Productividad de analistas | ✅ Correcta (ronda 3) | De 85 a 124 solicitudes por analista al mes (+46%), meta ≥ 110 |
 
-**Resumen:** las 9 preguntas ejecutadas en la ronda 2 tuvieron contenido correcto, incluidas
-las 6 trampas y las 2 que fallaron en la ronda 1. Tres preguntas más (7, 9 y 10) fueron
-correctas en la ronda 1. Quedan 2 sin ejecutar por cuota (13 y 14).
+**Resumen:** con las rondas 2 y 3, **las 14 preguntas tienen una respuesta correcta**, incluidas
+las 6 trampas y las 2 que fallaron en la ronda 1. Las preguntas 7, 9, 10, 13 y 14 se ejecutaron
+en la ronda 3, al renovarse la cuota; la 8 y la 11 se repitieron para verificar las correcciones
+de citas (ver ronda 3).
 
 Correcciones hechas durante la ronda 2:
 - **Límite de pasos (pregunta 6):** la regla de verificar antes de decir que algo no está se
@@ -75,6 +78,26 @@ Correcciones hechas durante la ronda 2:
   a datos que venían de SQL. Ahora solo cita la sección cuando proviene de la búsqueda en
   texto; los datos de SQL se citan con el archivo. Este cambio de prompt se hizo después de
   agotar la cuota y aún no se ha vuelto a ejecutar contra el modelo.
+
+## Ronda 3: preguntas pendientes y un último ajuste
+
+Se ejecutaron las preguntas pendientes (7, 9, 10, 13 y 14) y se repitieron la 8 y la 11 para
+comprobar la regla de citas. Las cifras fueron correctas en todas, y el cierre forzado al llegar
+al límite de pasos funcionó en vivo (preguntas 8 y 11). Aparecieron tres detalles, visibles en
+[`ronda3_antes_de_ajustes/`](validacion/transcripciones/ronda3_antes_de_ajustes/):
+
+| # | Problema observado | Corrección |
+|---|---|---|
+| 8 | Dijo que quedaron fuera los créditos "hipotecarios e **industriales**"; el informe dice "hipotecario y **corporativo**" (paráfrasis incorrecta de una salvedad). También presentó la concentración del abandono en microcrédito rural como la causa del incumplimiento | Reglas nuevas: usar los términos exactos del informe en alcances y salvedades, y no afirmar causas que el informe no establezca |
+| 8, 11 | Citó "salvedades" como si fuera una sección del informe | Regla explícita: las salvedades se citan solo con el archivo |
+| Casi todas | Una llamada extra en cada pregunta para leer la tabla `salvedades`; en la 14, una consulta repetida porque el aviso pedía `codigo_proyecto` aunque la fila ya traía `archivo_fuente` | Las salvedades de cada proyecto van en el prompt de sistema (~600 tokens), y `archivo_fuente` cuenta como identificador del proyecto |
+
+Tras los ajustes se repitieron la 8 y la 14 ([transcripciones](validacion/transcripciones/)):
+
+| # | Antes | Después |
+|---|---|---|
+| 8 | 7 llamadas, 31.900 tokens de entrada; "industriales"; cita "salvedades" | **5 llamadas**, 29.900 tokens; términos correctos; el 70% rural aparece como dato del informe, no como causa; citas limpias |
+| 14 | 5 llamadas, 17.100 tokens de entrada; consulta repetida | **3 llamadas, 10.200 tokens**; misma respuesta correcta |
 
 ## Cómo repetir la validación
 
