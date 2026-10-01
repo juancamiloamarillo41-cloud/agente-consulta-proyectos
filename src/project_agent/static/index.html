@@ -4,126 +4,239 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Consulta de proyectos · Procesa Consultores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* Herramienta de trabajo: una sola familia tipográfica, neutros de un mismo tinte (el verde
+     petróleo de los informes) y un único acento reservado para acciones y estados. */
   :root {
-    --bg: #f6f7f9; --panel: #ffffff; --text: #1d232b; --muted: #5b6573; --border: #dfe3e8;
-    --accent: #1c5cab; --accent-soft: #e8f0fa; --sql: #6b3fa0; --sql-soft: #f1ebf9;
-    --search: #1d7a55; --search-soft: #e6f4ee; --error: #b3261e; --error-soft: #fdecea;
-    --code-bg: #f1f3f6; --shadow: 0 1px 2px rgba(16, 24, 40, .06);
+    --surface: oklch(98.4% 0.004 215);
+    --panel: oklch(96% 0.007 215);      /* segunda capa neutra: panel lateral */
+    --sunk: oklch(94.2% 0.009 215);     /* campos y bloques de código */
+    --ink: oklch(24% 0.025 215);
+    --ink-2: oklch(40% 0.022 215);
+    --ink-3: oklch(49% 0.02 215);       /* texto auxiliar: al menos 4,5:1 sobre las tres superficies */
+    --rule: oklch(88.5% 0.01 215);
+    --accent: oklch(40% 0.075 215);
+    --accent-hover: oklch(34% 0.075 215);
+    --on-accent: oklch(98.4% 0.004 215);
+    --select: oklch(86% 0.045 215);
+    --warn: oklch(42% 0.12 40);
+    --warn-wash: oklch(94.5% 0.03 55);
+
+    --sans: "Schibsted Grotesk", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+
+    /* Regla de formas: 12 px en superficies, 6 px en lo que va dentro de ellas. */
+    --r-surface: 12px;
+    --r-inner: 6px;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --rail: 296px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #12151a; --panel: #1a1f26; --text: #e6e9ee; --muted: #9aa4b2; --border: #2c333d;
-      --accent: #6aa3ec; --accent-soft: #1d2a3b; --sql: #b99be6; --sql-soft: #2a2238;
-      --search: #5cc39a; --search-soft: #17302a; --error: #f2b8b5; --error-soft: #3a1d1b;
-      --code-bg: #232932; --shadow: none;
+      --surface: oklch(19.5% 0.014 215);
+      --panel: oklch(17% 0.014 215);
+      --sunk: oklch(24.5% 0.016 215);
+      --ink: oklch(93% 0.008 215);
+      --ink-2: oklch(80% 0.012 215);
+      --ink-3: oklch(70% 0.014 215);
+      --rule: oklch(31% 0.016 215);
+      --accent: oklch(80% 0.075 205);
+      --accent-hover: oklch(86% 0.07 205);
+      --on-accent: oklch(19.5% 0.014 215);
+      --select: oklch(38% 0.05 215);
+      --warn: oklch(84% 0.09 60);
+      --warn-wash: oklch(28% 0.045 50);
     }
   }
+
   * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  html { -webkit-text-size-adjust: 100%; scrollbar-color: var(--rule) transparent; color-scheme: light dark; }
+  ::selection { background: var(--select); color: var(--ink); }
+  body { margin: 0; background: var(--surface); color: var(--ink); font: 400 1rem/1.6 var(--sans); caret-color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--r-inner); }
+
+  .layout { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100dvh; }
+
+  /* ---------- Panel lateral ---------- */
+  .rail {
+    position: sticky; top: 0; align-self: start; height: 100dvh; overflow-y: auto;
+    padding: 32px 24px 24px; background: var(--panel); border-right: 1px solid var(--rule);
+    display: flex; flex-direction: column; gap: 28px;
   }
-  main { max-width: 880px; margin: 0 auto; padding: 28px 16px 64px; overflow-wrap: anywhere; }
-  .panel, .answer, .step { min-width: 0; }
-  header h1 { margin: 0; font-size: 1.45rem; letter-spacing: -.01em; }
-  header p { margin: 4px 0 0; color: var(--muted); }
-  .projects { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 22px; }
-  .project {
-    font-size: .8rem; padding: 3px 9px; border-radius: 999px; background: var(--panel);
-    border: 1px solid var(--border); color: var(--muted);
+  .rail h1 { margin: 0 0 8px; font: 700 1.25rem/1.25 var(--sans); letter-spacing: -.015em; }
+  .rail p { margin: 0; color: var(--ink-2); font-size: .9rem; line-height: 1.5; }
+  .reports summary { min-height: 44px; padding-block: 11px; font: 600 .9rem/1.3 var(--sans); cursor: pointer; }
+  .reports summary::marker { color: var(--ink-3); }
+  .conv-list { list-style: none; margin: 0; padding: 0; }
+  .conv {
+    display: block; width: calc(100% + 20px); min-height: 44px; margin: 0 -10px; padding: 8px 10px; text-align: left;
+    font: inherit; color: var(--ink); background: none; border: 0; border-radius: var(--r-inner); cursor: pointer;
+    transition: background-color 160ms ease;
   }
-  .project b { color: var(--text); font-weight: 600; }
-  .panel {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px; box-shadow: var(--shadow);
-  }
-  form textarea {
-    width: 100%; min-height: 78px; resize: vertical; padding: 10px 12px; font: inherit;
-    color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  }
-  form textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
-  .form-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
-  .hint { color: var(--muted); font-size: .82rem; }
-  button.primary {
-    background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 9px 18px;
-    font: inherit; font-weight: 600; cursor: pointer;
-  }
-  @media (prefers-color-scheme: dark) { button.primary { color: #0e1726; } }
-  button.primary:disabled { opacity: .55; cursor: wait; }
-  .actions { display: flex; gap: 8px; }
-  button.secondary {
-    background: transparent; color: var(--accent); border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 14px; font: inherit; cursor: pointer;
-  }
-  button.secondary:hover { border-color: var(--accent); }
-  .divider { text-align: center; font-size: .78rem; color: var(--muted); }
-  .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .conv .title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: .88rem; line-height: 1.35; }
+  .conv .date { display: block; margin-top: 2px; font-size: .78rem; color: var(--ink-3); }
+  .conv[aria-current="true"] { background: var(--sunk); }
+  .conv[aria-current="true"] .title { font-weight: 600; }
+  @media (hover: hover) and (pointer: fine) { .conv:hover { background: var(--sunk); } }
+  .conv-empty { margin: 0 0 4px; font-size: .84rem; line-height: 1.5; color: var(--ink-3); }
+  .projects { list-style: none; margin: 0; padding: 0; }
+  .projects li { padding: 10px 0; border-top: 1px solid var(--rule); }
+  .projects .client { display: block; font-size: .9rem; line-height: 1.35; }
+  .projects .meta { display: block; margin-top: 2px; font-size: .8rem; color: var(--ink-3); }
+  .projects .code { font: .76rem var(--mono); font-variant-numeric: tabular-nums; }
+  .rail-foot { margin-top: auto; font-size: .8rem; line-height: 1.5; color: var(--ink-3); }
+
+  /* ---------- Columna de trabajo ---------- */
+  .main { display: flex; flex-direction: column; min-height: 100dvh; }
+  .thread { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; padding: 40px 32px 16px; }
+
+  .empty h2 { margin: 0 0 8px; font: 700 1.75rem/1.2 var(--sans); letter-spacing: -.022em; text-wrap: balance; }
+  .empty > p { margin: 0 0 24px; color: var(--ink-2); max-width: 56ch; }
+  .examples { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
   .examples button {
-    font: inherit; font-size: .82rem; padding: 4px 10px; border-radius: 999px; cursor: pointer;
-    background: var(--accent-soft); color: var(--accent); border: 1px solid transparent;
+    display: block; width: 100%; min-height: 48px; padding: 12px 4px; font: inherit; text-align: left;
+    color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--rule); cursor: pointer;
+    transition: color 160ms ease, transform 140ms var(--ease-out);
   }
-  .examples button:hover { border-color: var(--accent); }
-  #results { display: flex; flex-direction: column; gap: 16px; margin-top: 22px; }
-  .question { font-weight: 600; margin: 0 0 10px; }
-  .question::before { content: "Pregunta · "; color: var(--muted); font-weight: 500; }
-  .answer :first-child { margin-top: 0; }
-  .answer :last-child { margin-bottom: 0; }
-  .answer h1, .answer h2, .answer h3 { font-size: 1rem; margin: 14px 0 6px; }
-  .answer ul, .answer ol { padding-left: 22px; }
-  .answer code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .88em; }
-  .answer table { border-collapse: collapse; margin: 8px 0; font-size: .92em; }
-  .answer th, .answer td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; }
-  .section-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 16px 0 6px; }
-  .sources { margin: 0; padding-left: 18px; font-size: .88rem; }
-  details { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
-  summary { cursor: pointer; font-size: .88rem; color: var(--muted); }
-  .steps { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-  .step { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: .86rem; }
-  .badge { display: inline-block; font-size: .72rem; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-right: 6px; }
-  .badge.sql { background: var(--sql-soft); color: var(--sql); }
-  .badge.search { background: var(--search-soft); color: var(--search); }
-  .step pre {
-    margin: 6px 0; padding: 7px 9px; background: var(--code-bg); border-radius: 6px;
-    white-space: pre-wrap; word-break: break-word; font-size: .82rem;
+  .examples button:active { transform: scale(0.99); }
+  @media (hover: hover) and (pointer: fine) { .examples button:hover { color: var(--accent); } }
+
+  .turn { padding: 28px 0 32px; border-top: 1px solid var(--rule); }
+  .turn:first-child { border-top: 0; padding-top: 0; }
+  .question { margin: 0 0 4px; font: 600 1.2rem/1.35 var(--sans); letter-spacing: -.01em; text-wrap: balance; }
+  .when { margin: 0 0 14px; font-size: .8rem; color: var(--ink-3); }
+
+  /* La pregunta aparece al instante (se envía con el teclado). El único movimiento de la página es
+     la respuesta que llega tras la espera: transición interrumpible, opacity y transform, 200 ms. */
+  .reply { opacity: 1; transform: none; transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+  @starting-style { .reply { opacity: 0; transform: translateY(6px); } }
+
+  .answer { max-width: 68ch; overflow-wrap: anywhere; }
+  .answer > :first-child { margin-top: 0; }
+  .answer > :last-child { margin-bottom: 0; }
+  .answer p { margin: 0 0 .85em; }
+  .answer h1, .answer h2, .answer h3, .answer h4 { margin: 1.5em 0 .4em; font: 600 1rem/1.35 var(--sans); }
+  .answer ul, .answer ol { margin: 0 0 .85em; padding-left: 1.25em; }
+  .answer li { margin: .3em 0; }
+  .answer li::marker { color: var(--ink-3); }
+  .answer strong { font-weight: 600; }
+  .answer code { font: .86em var(--mono); background: var(--sunk); padding: .1em .35em; border-radius: var(--r-inner); }
+  .answer table { border-collapse: collapse; margin: 0 0 1em; font-size: .92rem; font-variant-numeric: tabular-nums; }
+  .answer th, .answer td { padding: 7px 16px 7px 0; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+  .answer th { font-weight: 600; }
+
+  .sources { margin: 20px 0 0; font-size: .86rem; color: var(--ink-2); }
+  .sources ul { list-style: none; margin: 4px 0 0; padding: 0; }
+  .sources li { font: .78rem/1.7 var(--mono); overflow-wrap: anywhere; }
+
+  .trace { margin-top: 8px; }
+  .trace summary { min-height: 44px; padding-block: 11px; font-size: .86rem; color: var(--ink-2); cursor: pointer; }
+  .trace summary::marker { color: var(--ink-3); }
+  .steps { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; display: grid; grid-template-columns: 2ch minmax(0, 1fr); gap: 0 12px; padding: 12px 0 0; }
+  .steps li::before { content: counter(step); font: .8rem/1.75 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .tool { font: 600 .86rem/1.5 var(--sans); }
+  .tool span { font-weight: 400; color: var(--ink-3); }
+  .steps pre { margin: 6px 0; padding: 10px 12px; font: .8rem/1.55 var(--mono); background: var(--sunk); border-radius: var(--r-inner); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .steps .result { font-size: .84rem; color: var(--ink-2); }
+  .usage { margin: 14px 0 0; font-size: .8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  /* Carga: esqueleto con la forma de una respuesta, no un indicador giratorio. */
+  .skeleton { display: grid; gap: 10px; max-width: 68ch; }
+  .skeleton i { display: block; height: 12px; border-radius: var(--r-inner); background: var(--sunk); animation: breathe 1.4s ease-in-out infinite; }
+  .skeleton i:nth-child(2) { width: 92%; animation-delay: 120ms; }
+  .skeleton i:nth-child(3) { width: 64%; animation-delay: 240ms; }
+  @keyframes breathe { 50% { opacity: .45; } }
+  .waiting { margin: 12px 0 0; font-size: .86rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  .problem { max-width: 68ch; padding: 14px 16px; background: var(--warn-wash); color: var(--warn); border-radius: var(--r-surface); }
+  .problem details { margin-top: 6px; font-size: .82rem; }
+  .problem summary { min-height: 44px; padding-block: 11px; cursor: pointer; }
+  .problem pre { margin: 0; font: .76rem/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .divider { padding: 14px 0; border-top: 1px solid var(--rule); font-size: .84rem; color: var(--ink-3); }
+
+  /* ---------- Caja de pregunta ---------- */
+  .composer-wrap { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--rule); padding: 14px 32px 16px; }
+  .composer { max-width: 760px; margin: 0 auto; }
+  .composer label { display: block; margin-bottom: 6px; font: 600 .86rem/1.3 var(--sans); }
+  .field { display: flex; gap: 8px; align-items: flex-end; padding: 6px 6px 6px 14px; background: var(--sunk); border: 1px solid var(--rule); border-radius: var(--r-surface); transition: border-color 160ms ease; }
+  .field:focus-within { border-color: var(--accent); }
+  .field textarea { flex: 1; min-width: 0; min-height: 44px; max-height: 180px; padding: 10px 0; resize: none; scrollbar-width: thin; border: 0; outline: 0; background: none; color: var(--ink); font: inherit; line-height: 1.5; }
+  .field textarea::placeholder { color: var(--ink-3); }
+  .send {
+    flex: none; min-width: 104px; min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--r-inner); cursor: pointer;
+    background: var(--accent); color: var(--on-accent); font: 600 .92rem var(--sans); white-space: nowrap;
+    transition: transform 140ms var(--ease-out), background-color 160ms ease, opacity 160ms ease;
   }
-  .step .result { color: var(--muted); }
-  .meta { margin-top: 10px; font-size: .78rem; color: var(--muted); }
-  .error { border-color: var(--error); background: var(--error-soft); color: var(--error); }
-  .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); }
-  .spinner {
-    width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border);
-    border-top-color: var(--accent); animation: spin .8s linear infinite;
+  .send:active { transform: scale(0.97); }
+  .send:disabled { opacity: .55; cursor: progress; }
+  @media (hover: hover) and (pointer: fine) { .send:not(:disabled):hover { background: var(--accent-hover); } }
+  .composer-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; font-size: .8rem; color: var(--ink-3); }
+  .link { min-height: 44px; padding: 0 4px; background: none; border: 0; color: var(--accent); font: 600 .84rem var(--sans); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---------- Pantallas pequeñas: el panel pasa arriba y la lista empieza plegada ---------- */
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .rail { position: static; height: auto; padding: 20px 20px 8px; border-right: 0; border-bottom: 1px solid var(--rule); gap: 8px; }
+    .rail-foot { display: none; }
+    .main { min-height: 0; }
+    .thread { padding: 24px 20px 16px; }
+    .empty h2 { font-size: 1.4rem; }
+    .composer-wrap { padding: 12px 16px 12px; }
+    .composer-meta .hint { display: none; }
+    .composer-meta { justify-content: flex-end; }
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Movimiento reducido: se conserva la opacidad y se quita el desplazamiento y el pulso. */
+  @media (prefers-reduced-motion: reduce) {
+    .reply, .examples button, .send, .conv { transition-property: opacity, color, background-color; }
+    @starting-style { .reply { transform: none; } }
+    .skeleton i { animation: none; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>Consulta de proyectos</h1>
-    <p>Procesa Consultores · preguntas sobre los informes de cierre, con fuentes y trazabilidad.</p>
-  </header>
+<div class="layout">
+  <aside class="rail">
+    <div>
+      <h1>Consulta de proyectos</h1>
+      <p>Informes de cierre de Procesa Consultores. Cada respuesta cita su informe y muestra cómo se obtuvo.</p>
+    </div>
+    <details class="reports" id="convs" open>
+      <summary id="convs-summary">Conversaciones</summary>
+      <p class="conv-empty" id="conv-empty">Aquí quedarán guardadas tus conversaciones, con su fecha.</p>
+      <ul class="conv-list" id="conv-list"></ul>
+      <button class="link" id="clear" type="button" hidden>Borrar historial</button>
+    </details>
+    <details class="reports" id="reports" open>
+      <summary id="reports-summary">Informes disponibles</summary>
+      <ul class="projects" id="projects"></ul>
+    </details>
+    <p class="rail-foot">Si un dato no está en los informes, el agente lo dice en lugar de suponerlo.</p>
+  </aside>
 
-  <div class="projects" id="projects" aria-label="Informes disponibles"></div>
+  <main class="main">
+    <div class="thread" id="thread" aria-live="polite">
+    </div>
 
-  <section class="panel">
-    <form id="form">
-      <label for="question" class="section-title" style="display:block;margin-top:0">Tu pregunta</label>
-      <textarea id="question" maxlength="1000" placeholder="Por ejemplo: ¿qué lecciones aprendidas se repiten entre proyectos?" required></textarea>
-      <div class="form-row">
-        <span class="hint">Ctrl + Enter para enviar · admite preguntas de seguimiento · cada respuesta tarda entre 10 y 40 s</span>
-        <div class="actions">
-          <button class="secondary" id="reset" type="button" hidden>Nueva conversación</button>
-          <button class="primary" id="submit" type="submit">Preguntar</button>
+    <div class="composer-wrap">
+      <form class="composer" id="form">
+        <label for="question">Tu pregunta</label>
+        <div class="field">
+          <textarea id="question" rows="1" maxlength="1000" placeholder="Ej.: proyectos con SMED" required></textarea>
+          <button class="send" id="submit" type="submit">Preguntar</button>
         </div>
-      </div>
-      <div class="examples" id="examples"></div>
-    </form>
-  </section>
-
-  <section id="results" aria-live="polite"></section>
-</main>
+        <div class="composer-meta">
+          <span class="hint">Enter envía. Mayús + Enter agrega una línea.</span>
+          <button class="link" id="reset" type="button" hidden>Nueva conversación</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
 
 <script>
 const EXAMPLES = [
@@ -133,140 +246,252 @@ const EXAMPLES = [
   "¿Qué lecciones aprendidas se repiten entre varios proyectos?",
   "¿Qué proyectos hemos hecho en minería?",
 ];
-const TOOL_LABELS = {
-  consultar_fichas_sql: ["SQL · fichas", "sql"],
-  buscar_en_informes: ["Búsqueda · texto", "search"],
+const TOOLS = {
+  consultar_fichas_sql: ["Consulta SQL", "en las fichas"],
+  buscar_en_informes: ["Búsqueda", "en el texto de los informes"],
 };
 
-const form = document.getElementById("form");
-const input = document.getElementById("question");
-const submit = document.getElementById("submit");
-const results = document.getElementById("results");
-const resetButton = document.getElementById("reset");
-// Conversación actual: se envía al servidor en cada pregunta para que el agente entienda los seguimientos.
-let history = [];
+const $ = id => document.getElementById(id);
+const thread = $("thread"), form = $("form"), input = $("question"), submit = $("submit"), resetButton = $("reset");
+const number = new Intl.NumberFormat("es", { useGrouping: "always" });
+const dayTime = new Intl.DateTimeFormat("es", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const dayOnly = new Intl.DateTimeFormat("es", { day: "numeric", month: "short", year: "numeric" });
+const timeOnly = new Intl.DateTimeFormat("es", { hour: "2-digit", minute: "2-digit" });
 
-resetButton.addEventListener("click", () => {
-  history = [];
-  resetButton.hidden = true;
-  results.prepend(el("div", { class: "divider", text: "── Nueva conversación ──" }));
-  input.focus();
-});
+// Historial: se guarda solo en este navegador (localStorage); el servidor no almacena conversaciones.
+// Cada conversación: { id, inicio, turnos: [{ pregunta, fecha, data }] }, la más reciente primero.
+const STORE_KEY = "consulta-proyectos:conversaciones:v1";
+const MAX_CONVERSATIONS = 30;
+let conversations = loadConversations();
+let current = null;  // conversación abierta; null = conversación nueva aún sin respuestas
+
+function loadConversations() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "[]");
+    return Array.isArray(saved) ? saved.filter(c => c && Array.isArray(c.turnos) && c.turnos.length) : [];
+  } catch { return []; }
+}
+function saveConversations() {
+  conversations = conversations.slice(0, MAX_CONVERSATIONS);
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(conversations)); } catch { /* sin almacenamiento: el historial dura la sesión */ }
+}
+function relativeDate(iso) {
+  const date = new Date(iso), today = new Date();
+  const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((midnight(today) - midnight(date)) / 86400000);
+  if (days === 0) return `Hoy, ${timeOnly.format(date)}`;
+  if (days === 1) return `Ayer, ${timeOnly.format(date)}`;
+  return dayOnly.format(date);
+}
+// Lo que se envía al agente para que entienda las preguntas de seguimiento.
+const agentHistory = () => (current ? current.turnos.map(t => ({ pregunta: t.pregunta, respuesta: t.data.respuesta_texto })) : []);
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
     if (key === "text") node.textContent = value;
-    else if (key === "html") node.innerHTML = value;  // solo para HTML ya saneado por el servidor
+    else if (key === "html") node.innerHTML = value;  // solo HTML ya saneado por el servidor
     else node.setAttribute(key, value);
   }
   for (const child of children) node.append(child);
   return node;
 }
 
-for (const text of EXAMPLES) {
-  const chip = el("button", { type: "button", text });
-  chip.addEventListener("click", () => { input.value = text; input.focus(); });
-  document.getElementById("examples").append(chip);
+function showEmpty() {
+  const examples = el("ul", { class: "examples" }, EXAMPLES.map(text => {
+    const button = el("button", { type: "button", text });
+    button.addEventListener("click", () => ask(text));
+    return el("li", {}, [button]);
+  }));
+  thread.replaceChildren(el("section", { class: "empty", id: "empty" }, [
+    el("h2", { text: "¿Qué quieres saber de los proyectos cerrados?" }),
+    el("p", { text: "Pregunta por resultados, metodologías o lecciones. Puedes seguir la conversación con preguntas cortas." }),
+    examples,
+  ]));
 }
 
+function renderConversations() {
+  const count = conversations.length;
+  $("convs-summary").textContent = count ? `Conversaciones (${count})` : "Conversaciones";
+  $("conv-empty").hidden = count > 0;
+  $("clear").hidden = count === 0;
+  $("conv-list").replaceChildren(...conversations.map(conversation => {
+    const button = el("button", { type: "button", class: "conv" }, [
+      el("span", { class: "title", text: conversation.turnos[0].pregunta }),
+      el("span", { class: "date", text: relativeDate(conversation.inicio) }),
+    ]);
+    if (current && current.id === conversation.id) button.setAttribute("aria-current", "true");
+    button.addEventListener("click", () => openConversation(conversation.id));
+    return el("li", {}, [button]);
+  }));
+}
+
+function openConversation(id) {
+  const conversation = conversations.find(c => c.id === id);
+  if (!conversation || submit.disabled) return;
+  current = conversation;
+  thread.replaceChildren(...conversation.turnos.map(turn => {
+    const { article, body } = turnShell(turn.pregunta, turn.fecha);
+    body.replaceChildren(...renderAnswer(turn.data));
+    return article;
+  }));
+  resetButton.hidden = false;
+  renderConversations();
+  if (narrow.matches) $("convs").open = false;
+  thread.scrollIntoView({ block: "start", behavior: "instant" });
+}
+
+// En pantallas pequeñas las listas del panel se pliegan para no empujar la conversación;
+// se vuelve a evaluar si la ventana cambia de tamaño.
+const narrow = window.matchMedia("(max-width: 860px)");
+const syncPanels = () => { $("reports").open = $("convs").open = !narrow.matches; };
+syncPanels();
+narrow.addEventListener("change", syncPanels);
+
 fetch("/api/proyectos").then(r => r.ok ? r.json() : []).then(projects => {
-  const box = document.getElementById("projects");
   for (const p of projects) {
-    box.append(el("span", { class: "project", title: p.archivo_fuente }, [
-      el("b", { text: p.codigo_proyecto }), ` · ${p.cliente} · ${p.sector}`,
+    $("projects").append(el("li", { title: p.archivo_fuente }, [
+      el("span", { class: "client", text: p.cliente }),
+      el("span", { class: "meta" }, [el("span", { class: "code", text: p.codigo_proyecto }), `, ${p.sector}`]),
     ]));
   }
+  if (projects.length) $("reports-summary").textContent = `Informes disponibles (${projects.length})`;
 }).catch(() => {});
 
 function renderStep(call) {
-  const [label, kind] = TOOL_LABELS[call.nombre] || [call.nombre, "search"];
+  const [label, target] = TOOLS[call.nombre] || [call.nombre, ""];
   const args = call.argumentos || {};
   const detail = args.sql !== undefined
-    ? args.sql.replace(/\s+/g, " ").trim()
+    ? String(args.sql).replace(/\s+/g, " ").trim()
     : Object.entries(args).map(([k, v]) => `${k}: ${v}`).join("\n");
-  return el("li", { class: "step" }, [
-    el("span", { class: `badge ${kind}`, text: label }),
-    el("code", { text: call.nombre }),
+  return el("li", {}, [el("div", {}, [
+    el("div", { class: "tool" }, [label, " ", el("span", { text: target })]),
     el("pre", { text: detail }),
-    el("div", { class: "result", text: `→ ${call.resumen}` }),
-  ]);
+    el("div", { class: "result", text: `Devolvió ${call.resumen}` }),
+  ])]);
 }
 
-function renderAnswer(question, data) {
-  const card = el("article", { class: "panel" }, [
-    el("p", { class: "question", text: question }),
-    el("div", { class: "answer", html: data.respuesta_html }),
-  ]);
+function renderAnswer(data) {
+  const parts = [el("div", { class: "answer", html: data.respuesta_html })];
   if (data.fuentes.length) {
-    card.append(el("div", { class: "section-title", text: "Informes consultados por las herramientas" }));
-    card.append(el("ul", { class: "sources" }, data.fuentes.map(f => el("li", { text: f }))));
+    parts.push(el("div", { class: "sources" }, [
+      "Informes consultados por las herramientas",
+      el("ul", {}, data.fuentes.map(source => el("li", { text: source }))),
+    ]));
   }
-  const steps = data.herramientas.length
-    ? el("ol", { class: "steps" }, data.herramientas.map(renderStep))
-    : el("p", { class: "hint", text: "No se usaron herramientas." });
-  card.append(el("details", {}, [
-    el("summary", { text: `Trazabilidad · ${data.herramientas.length} llamadas a herramientas` }),
-    steps,
-  ]));
+  const steps = data.herramientas.length;
   const u = data.uso;
-  card.append(el("div", {
-    class: "meta",
-    text: `${data.segundos} s · modelo: ${u.modelos.join(", ") || "-"} · ${u.llamadas} llamadas al LLM · ` +
-          `${u.tokens_entrada.toLocaleString("es")} tokens de entrada · ${u.tokens_salida.toLocaleString("es")} de salida`,
-  }));
-  return card;
+  parts.push(el("details", { class: "trace" }, [
+    el("summary", { text: `Cómo se obtuvo esta respuesta: ${steps} ${steps === 1 ? "paso" : "pasos"}, ${number.format(data.segundos)} s` }),
+    steps ? el("ol", { class: "steps" }, data.herramientas.map(renderStep)) : el("p", { class: "usage", text: "No se usaron herramientas." }),
+    el("p", {
+      class: "usage",
+      text: `Modelo ${u.modelos.join(" y ") || "no informado"}, ${u.llamadas} llamadas, ` +
+            `${number.format(u.tokens_entrada)} tokens de entrada y ${number.format(u.tokens_salida)} de salida.`,
+    }),
+  ]));
+  return parts;
+}
+
+function turnShell(question, isoDate) {
+  const body = el("div");
+  const article = el("article", { class: "turn" }, [
+    el("h2", { class: "question", text: question }),
+    el("p", { class: "when" }, [el("time", { datetime: isoDate, text: dayTime.format(new Date(isoDate)) })]),
+    body,
+  ]);
+  return { article, body };
+}
+
+function autosize() {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 180) + "px";
 }
 
 async function ask(question) {
+  if (submit.disabled) return;
   submit.disabled = true;
+  $("empty")?.remove();
+  input.value = "";
+  autosize();
+
   const started = Date.now();
-  const counter = el("span", { text: "0 s" });
-  const loading = el("article", { class: "panel" }, [
-    el("p", { class: "question", text: question }),
-    el("div", { class: "loading" }, [el("div", { class: "spinner" }), "Consultando los informes… ", counter]),
-  ]);
-  const timer = setInterval(() => { counter.textContent = `${Math.round((Date.now() - started) / 1000)} s`; }, 1000);
-  results.prepend(loading);
+  const askedAt = new Date(started).toISOString();
+  const waiting = el("p", { class: "waiting", text: "Consultando los informes, 0 s" });
+  const { article, body } = turnShell(question, askedAt);
+  body.append(el("div", { class: "skeleton", "aria-hidden": "true" }, [el("i"), el("i"), el("i")]), waiting);
+  thread.append(article);
+  article.scrollIntoView({ block: "start", behavior: "instant" });
+  const timer = setInterval(() => {
+    waiting.textContent = `Consultando los informes, ${Math.round((Date.now() - started) / 1000)} s`;
+  }, 1000);
+
   try {
     const response = await fetch("/api/preguntar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pregunta: question, historial: history }),
+      body: JSON.stringify({ pregunta: question, historial: agentHistory() }),
     });
     const data = await response.json();
     if (!response.ok) {
       const detail = data.detail || {};
-      const error = new Error(detail.mensaje || (response.status === 422 ? "La pregunta no es válida." : "No se pudo obtener respuesta."));
+      const error = new Error(detail.mensaje || (response.status === 422 ? "La pregunta no es válida. Escríbela de nuevo." : "No se pudo obtener respuesta. Inténtalo otra vez."));
       error.technical = detail.tecnico;
       throw error;
     }
-    loading.replaceWith(renderAnswer(question, data));
-    history.push({ pregunta: question, respuesta: data.respuesta_texto });
+    body.replaceChildren(el("div", { class: "reply" }, renderAnswer(data)));
+
+    // Se guarda la conversación (la primera respuesta la crea) y pasa al principio de la lista.
+    if (!current) current = { id: `${started}-${Math.random().toString(36).slice(2, 8)}`, inicio: askedAt, turnos: [] };
+    current.turnos.push({ pregunta: question, fecha: askedAt, data });
+    conversations = [current, ...conversations.filter(c => c.id !== current.id)];
+    saveConversations();
+    renderConversations();
     resetButton.hidden = false;
   } catch (error) {
-    const card = el("article", { class: "panel error" }, [
-      el("p", { class: "question", text: question }),
-      el("div", { text: error.message || "No se pudo obtener respuesta." }),
-    ]);
-    if (error.technical) {
-      card.append(el("details", {}, [el("summary", { text: "Detalle técnico" }), el("pre", { class: "hint", text: error.technical })]));
-    }
-    loading.replaceWith(card);
+    const box = el("div", { class: "problem", role: "alert" }, [error.message || "No se pudo obtener respuesta. Inténtalo otra vez."]);
+    if (error.technical) box.append(el("details", {}, [el("summary", { text: "Detalle técnico" }), el("pre", { text: error.technical })]));
+    body.replaceChildren(box);
   } finally {
     clearInterval(timer);
     submit.disabled = false;
+    input.focus({ preventScroll: true });
   }
 }
 
 form.addEventListener("submit", event => {
   event.preventDefault();
   const question = input.value.trim();
-  if (question && !submit.disabled) ask(question);
+  if (question) ask(question);
 });
+input.addEventListener("input", autosize);
 input.addEventListener("keydown", event => {
-  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) form.requestSubmit();
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    form.requestSubmit();
+  }
 });
+resetButton.addEventListener("click", () => {
+  if (submit.disabled) return;
+  current = null;
+  resetButton.hidden = true;
+  showEmpty();
+  renderConversations();
+  input.focus();
+});
+$("clear").addEventListener("click", () => {
+  if (submit.disabled) return;
+  if (!window.confirm("Se borrarán todas las conversaciones guardadas en este navegador. ¿Continuar?")) return;
+  conversations = [];
+  current = null;
+  saveConversations();
+  resetButton.hidden = true;
+  showEmpty();
+  renderConversations();
+});
+
+showEmpty();
+renderConversations();
 </script>
 </body>
 </html>

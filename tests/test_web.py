@@ -8,7 +8,7 @@ from project_agent.config import FICHAS_DIR, REPORTS_DIR
 from project_agent.llm import LLMError
 from project_agent.storage.repository import rebuild_db_from_json
 from project_agent.tools import ReportTools
-from project_agent.web import create_app, render_markdown
+from project_agent.web import STATIC_DIR, create_app, render_markdown
 
 COOP_FILE = "Informe_Cierre_PC-2025-014_Cooperativa_Horizonte_Andino.pdf"
 
@@ -47,6 +47,13 @@ def test_index_serves_the_page(tools):
     response = client.get("/")
     assert response.status_code == 200
     assert "Consulta de proyectos" in response.text
+
+
+def test_page_is_self_contained_and_has_conversation_history():
+    page = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    assert "<script src=" not in page  # sin librerías de JavaScript externas
+    assert "localStorage" in page and "Conversaciones" in page
+    assert "/api/preguntar" in page and "historial" in page
 
 
 def test_projects_endpoint_lists_the_four_reports(tools):
