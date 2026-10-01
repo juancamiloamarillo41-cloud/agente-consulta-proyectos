@@ -13,6 +13,7 @@ import sys
 
 from project_agent.agent import AgentAnswer, Conversation, ProjectAgent
 from project_agent.llm import LLMError
+from project_agent.sync import sync_on_startup
 
 EXIT_WORDS = {"salir", "exit", "quit", "q"}
 RESET_WORDS = {"nueva", "nuevo", "reiniciar"}
@@ -53,6 +54,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("pregunta", nargs="*", help="Pregunta a responder (sin argumentos: modo interactivo).")
     args = parser.parse_args(argv)
 
+    sync_on_startup()  # genera la ficha de los informes nuevos que haya en data/informes
     try:
         agent = ProjectAgent()
     except Exception as exc:  # base inexistente, clave faltante, etc.

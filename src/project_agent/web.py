@@ -147,6 +147,9 @@ def main() -> None:
             webbrowser.open(url)
         return
 
+    from project_agent.sync import sync_on_startup
+
+    sync_on_startup()  # genera la ficha de los informes nuevos que haya en data/informes
     print(f"Interfaz web en {url} · cierra esta ventana o pulsa Ctrl+C para detenerla.")
     if not args.sin_navegador:
         threading.Timer(1.5, webbrowser.open, args=(url,)).start()

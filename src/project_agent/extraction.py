@@ -21,7 +21,7 @@ from project_agent.config import DB_PATH, FICHAS_DIR, REPORTS_DIR
 from project_agent.ficha import Ficha
 from project_agent.ingestion import Document, load_reports
 from project_agent.llm import LLMError, generate
-from project_agent.storage.repository import rebuild_db_from_json, save_ficha_json
+from project_agent.storage.repository import load_ficha_json, rebuild_db_from_json, save_ficha_json
 
 SYSTEM_PROMPT = """\
 Eres un analista de Procesa Consultores que convierte informes de cierre de proyecto en fichas estructuradas.
@@ -101,11 +101,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     exit_code = 0
+    # Un informe "ya tiene ficha" si alguna ficha salió de ese archivo (sirve aunque no tenga código PC-...).
+    sources_with_ficha = {load_ficha_json(p).archivo_fuente for p in FICHAS_DIR.glob("*.json")}
     for document in load_reports(REPORTS_DIR):
         if args.codigos and document.project_code not in args.codigos:
             continue
-        target = FICHAS_DIR / f"{document.project_code}.json"
-        if target.exists() and not args.force:
+        if document.source_file in sources_with_ficha and not args.force:
             print(f"= {document.source_file}: ficha existente, se omite (usa --force para regenerar)")
             continue
         print(f"> Extrayendo {document.source_file} ...", flush=True)
