@@ -52,7 +52,8 @@ def test_rejected_key_is_asked_again_and_gives_up_after_three_attempts(tmp_path)
 
 def test_empty_and_spaced_inputs_are_rejected_before_validating(tmp_path):
     root = _project(tmp_path)
-    ok, messages = _run(root, ["", "con espacio", "buena"])
+    # "\x16" es lo que deja Ctrl+V en una consola que no pega: se descarta como entrada vacía.
+    ok, messages = _run(root, ["\x16", "con espacio", "\x16buena"])
     assert ok and current_key(root / ".env") == "buena"
     assert any("ninguna clave" in m for m in messages) and any("espacios" in m for m in messages)
 

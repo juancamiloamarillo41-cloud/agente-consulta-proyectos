@@ -1,8 +1,8 @@
 """Configuración guiada de la clave de Gemini.
 
 Los lanzadores (`iniciar_agente.bat`, `iniciar_web.bat`) ejecutan este módulo antes de
-arrancar. Si no hay un `.env` con GEMINI_API_KEY, pide la clave en la ventana (sin mostrarla),
-comprueba con Google que sea válida y crea el archivo a partir de `.env.example`.
+arrancar. Si no hay un `.env` con GEMINI_API_KEY, pide la clave en la ventana (visible, para
+poder comprobar que se pegó completa), comprueba con Google que sea válida y crea el archivo a partir de `.env.example`.
 
 Uso manual:
     python -m project_agent.setup_env
@@ -10,7 +10,6 @@ Uso manual:
 
 from __future__ import annotations
 
-import getpass
 import sys
 from pathlib import Path
 from typing import Callable
@@ -28,6 +27,12 @@ def current_key(env_path: Path) -> str:
     if not env_path.exists():
         return ""
     return (dotenv_values(env_path).get(KEY_NAME) or "").strip()
+
+
+def clean_key(raw: str) -> str:
+    """Quita comillas y caracteres de control (p. ej. el ^V que deja Ctrl+V en algunas consolas)."""
+    key = "".join(ch for ch in raw if ch.isprintable() or ch.isspace())
+    return key.strip().strip('"').strip("'")
 
 
 def validate_key(key: str) -> bool | None:
@@ -67,7 +72,7 @@ def write_env(env_path: Path, example_path: Path, key: str) -> None:
 
 def ensure_env(
     root: Path = ROOT_DIR,
-    ask: Callable[[str], str] = getpass.getpass,
+    ask: Callable[[str], str] = input,
     validate: Callable[[str], bool | None] = validate_key,
     out: Callable[[str], None] = print,
 ) -> bool:
@@ -77,18 +82,21 @@ def ensure_env(
         return True
 
     out("No se encontró la clave de Gemini (archivo .env).")
-    out(f"Consigue una gratis en {API_KEY_URL} y pégala aquí (no se mostrará al escribir).")
+    out(f"Consigue una gratis en {API_KEY_URL} y pégala aquí (clic derecho en la ventana).")
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        key = ask("Clave de Gemini: ").strip().strip('"').strip("'")
+        key = clean_key(ask("Clave de Gemini: "))
         if not key:
-            out("No se recibió ninguna clave.")
+            out("No se recibió ninguna clave. Pégala con clic derecho y pulsa Enter.")
             continue
         if any(ch.isspace() for ch in key):
             out("La clave no puede tener espacios. Vuelve a pegarla.")
             continue
         valid = validate(key)
         if valid is False:
-            out(f"Google rechazó esa clave (intento {attempt} de {MAX_ATTEMPTS}). Revisa que esté completa.")
+            out(
+                f"Google rechazó esa clave de {len(key)} caracteres (intento {attempt} de {MAX_ATTEMPTS}). "
+                "Revisa que esté completa."
+            )
             continue
         write_env(env_path, example_path, key)
         suffix = f"…{key[-4:]}" if len(key) > 4 else ""
