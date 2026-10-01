@@ -74,10 +74,15 @@ pegarla), comprueba con Google que sea válida (sin gastar cuota de preguntas) y
 Lo mismo se puede hacer desde la terminal con `python -m project_agent.setup_env`. La clave se
 consigue gratis en [Google AI Studio](https://aistudio.google.com/apikey).
 
-**En cada terminal nueva hay que activar el entorno** (`.venv\Scripts\activate`; en PowerShell
-también `.\.venv\Scripts\Activate.ps1`) antes de usar los comandos de la tabla. Si no, Windows
-responde que `agente-proyectos` no se reconoce como comando. La alternativa es llamarlos con su
-ruta: `.venv\Scripts\agente-proyectos-web.exe`.
+**Dos formas de usarlo:**
+
+- **Con doble clic (Windows):** `iniciar_agente.bat` e `iniciar_web.bat` no necesitan activar el
+  entorno ni escribir comandos; usan directamente el Python de `.venv`.
+- **Desde la terminal:** los comandos de la tabla (`agente-proyectos`, `python -m pytest`...) sí
+  requieren activar el entorno en cada terminal nueva (`.venv\Scripts\activate`; en PowerShell
+  también `.\.venv\Scripts\Activate.ps1`). Si no, Windows responde que `agente-proyectos` no se
+  reconoce como comando. La alternativa es llamarlos con su ruta, por ejemplo
+  `.venv\Scripts\agente-proyectos.exe`.
 
 | Acción | Comando |
 |---|---|
