@@ -30,6 +30,8 @@ def fake(monkeypatch):
         monkeypatch.setattr(llm, "get_client", lambda: type("Client", (), {"models": models_api})())
         monkeypatch.setattr(llm, "models_to_try", lambda: models)
         monkeypatch.setattr(llm.time, "sleep", lambda seconds: None)
+        monkeypatch.setattr(llm, "_discarded", set())
+        monkeypatch.setattr(llm, "_last_working", None)
         return models_api
 
     return install
@@ -43,6 +45,27 @@ def test_unavailable_model_is_skipped(fake):
 
 def test_daily_quota_skips_to_next_model_without_retrying(fake):
     api = fake({"a": _api_error(429, "GenerateRequestsPerDayPerProjectPerModel-FreeTier")}, ["a", "b"])
+    assert llm.generate("hola", types.GenerateContentConfig()) == "respuesta de b"
+    assert api.calls == ["a", "b"]
+
+
+def test_exhausted_model_is_not_tried_again_in_later_calls(fake):
+    api = fake({"a": _api_error(429, "PerDay")}, ["a", "b"])
+    for _ in range(3):  # una pregunta hace varias llamadas seguidas
+        llm.generate("hola", types.GenerateContentConfig())
+    assert api.calls == ["a", "b", "b", "b"]
+
+
+def test_later_calls_start_with_the_model_that_last_answered(fake):
+    api = fake({"a": _api_error(503, "high demand")}, ["a", "b"])
+    llm.generate("hola", types.GenerateContentConfig())
+    api.calls.clear()
+    llm.generate("hola", types.GenerateContentConfig())
+    assert api.calls == ["b"]
+
+
+def test_timeout_moves_to_next_model_without_waiting_again(fake):
+    api = fake({"a": llm.httpx.ReadTimeout("sin respuesta")}, ["a", "b"])
     assert llm.generate("hola", types.GenerateContentConfig()) == "respuesta de b"
     assert api.calls == ["a", "b"]
 

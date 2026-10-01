@@ -29,7 +29,7 @@ DEFAULT_MODELS = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash", "g
 RETRYABLE_STATUS = {429, 500, 503, 504}
 MODEL_UNAVAILABLE_STATUS = 404  # el modelo no existe o no está habilitado para esta clave
 MAX_ATTEMPTS_PER_MODEL = 2
-REQUEST_TIMEOUT_MS = 90_000  # sin límite, una petición colgada bloquea al agente indefinidamente
+REQUEST_TIMEOUT_MS = 60_000  # sin límite, una petición colgada bloquea al agente indefinidamente
 
 logger = logging.getLogger(__name__)
 
@@ -80,27 +80,47 @@ def _daily_quota_exhausted(exc: errors.APIError) -> bool:
     return exc.code == 429 and "PerDay" in str(exc)
 
 
+# Memoria de la sesión: una pregunta hace varias llamadas, y sin esto cada una volvería a
+# probar los modelos que ya se sabe que no sirven (cuota diaria agotada, no disponibles).
+_discarded: set[str] = set()
+_last_working: str | None = None
+
+
+def _ordered_models() -> list[str]:
+    """La cadena configurada, sin los modelos descartados y empezando por el último que respondió."""
+    models = models_to_try()
+    usable = [m for m in models if m not in _discarded] or models
+    if _last_working in usable:
+        usable = [_last_working] + [m for m in usable if m != _last_working]
+    return usable
+
+
 def generate(contents, config: types.GenerateContentConfig) -> types.GenerateContentResponse:
     """Llama al modelo con reintentos, recorriendo la cadena de respaldo si hace falta."""
+    global _last_working
     client = get_client()
     last_error: Exception | None = None
-    for model in models_to_try():
+    for model in _ordered_models():
         for attempt in range(MAX_ATTEMPTS_PER_MODEL):
             try:
-                return client.models.generate_content(model=model, contents=contents, config=config)
+                response = client.models.generate_content(model=model, contents=contents, config=config)
+                _last_working = model
+                return response
             except httpx.TimeoutException as exc:
                 last_error = exc
-                logger.warning("%s no respondió a tiempo (intento %d)", model, attempt + 1)
-                continue
+                logger.warning("%s no respondió a tiempo; se usa el siguiente modelo", model)
+                break  # repetir la espera completa con el mismo modelo solo alarga la respuesta
             except errors.APIError as exc:
                 last_error = exc
                 if exc.code == MODEL_UNAVAILABLE_STATUS:
                     logger.warning("%s no está disponible para esta clave; se usa el siguiente modelo", model)
+                    _discarded.add(model)
                     break
                 if exc.code not in RETRYABLE_STATUS:
                     raise LLMError(f"Error del proveedor ({model}): {exc}", _reason(exc)) from exc
                 if _daily_quota_exhausted(exc):
                     logger.warning("%s agotó su cuota diaria; se usa el siguiente modelo", model)
+                    _discarded.add(model)
                     break
                 logger.warning("%s respondió %s (intento %d); se reintenta", model, exc.code, attempt + 1)
                 time.sleep(min(5 * 2**attempt, 20))
