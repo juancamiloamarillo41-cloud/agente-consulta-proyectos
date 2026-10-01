@@ -98,8 +98,12 @@ consigue gratis en [Google AI Studio](https://aistudio.google.com/apikey).
 
 Las fichas ya generadas están versionadas en [`data/fichas/`](data/fichas/).
 
-Para agregar un informe nuevo: copiarlo (PDF o Word) en `data/informes/` y ejecutar
-`python -m project_agent.extraction`. Solo se procesan los informes que aún no tienen ficha.
+**Para agregar un informe nuevo basta con copiarlo (PDF o Word) en `data/informes/` y abrir el
+agente** (consola o web). Al arrancar, el agente detecta los informes que aún no tienen ficha,
+la genera con el modelo, verifica sus cifras y actualiza la base; si no hay nada nuevo, no llama
+al modelo. Si la extracción falla (sin cuota o sin conexión), el agente arranca igual con las
+fichas existentes y lo reintenta la próxima vez. También se puede hacer a mano con
+`python -m project_agent.extraction`.
 
 ## 2. Arquitectura
 
@@ -132,6 +136,7 @@ data/informes/*.pdf|*.docx
 | [`extraction.py`](src/project_agent/extraction.py) | Genera las fichas con el LLM y verifica sus cifras contra el informe |
 | [`storage/`](src/project_agent/storage/) | Esquema SQLite, escritura idempotente y consulta SQL de solo lectura |
 | [`tools.py`](src/project_agent/tools.py) | Las dos herramientas del agente: declaración, ejecución y resumen para la traza |
+| [`sync.py`](src/project_agent/sync.py) | Al arrancar, genera la ficha de los informes nuevos de `data/informes` y pone la base al día |
 | [`agent.py`](src/project_agent/agent.py) | Bucle de uso de herramientas, prompt de sistema, traza y consumo |
 | [`llm.py`](src/project_agent/llm.py) | Único punto de contacto con el proveedor: reintentos y cadena de modelos de respaldo |
 | [`cli.py`](src/project_agent/cli.py) | Interfaz de consola |
@@ -259,7 +264,7 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
 
 ## 5. Validación
 
-- **Tests automáticos** (`python -m pytest`, 100 tests, sin consumir API; se ejecutan en
+- **Tests automáticos** (`python -m pytest`, 106 tests, sin consumir API; se ejecutan en
   GitHub Actions en Linux y Windows con cada push): lectura de PDF y
   Word, limpieza de tablas, secciones, búsqueda, base de datos, barreras del SQL, bucle del
   agente con el modelo simulado, memoria de conversación, cadena de modelos de respaldo,
@@ -310,6 +315,9 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
   página.
 - **Extracción no determinista**: regenerar una ficha puede producir redacciones distintas;
   la verificación de cifras y los tests de fidelidad acotan ese riesgo.
+- **Informes modificados**: la detección automática es por archivo nuevo. Si se reemplaza el
+  contenido de un informe que ya tiene ficha, hay que regenerarla con
+  `python -m project_agent.extraction --force`.
 
 ## 8. Estimación de costo (50 consultores)
 
