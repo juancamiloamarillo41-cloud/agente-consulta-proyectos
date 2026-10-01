@@ -140,7 +140,7 @@ data/informes/*.pdf|*.docx
 | [`agent.py`](src/project_agent/agent.py) | Bucle de uso de herramientas, prompt de sistema, traza y consumo |
 | [`llm.py`](src/project_agent/llm.py) | Único punto de contacto con el proveedor: reintentos y cadena de modelos de respaldo |
 | [`cli.py`](src/project_agent/cli.py) | Interfaz de consola |
-| [`web.py`](src/project_agent/web.py) y [`static/index.html`](src/project_agent/static/index.html) | Interfaz web opcional: API REST y página sin dependencias externas |
+| [`web.py`](src/project_agent/web.py) y [`static/index.html`](src/project_agent/static/index.html) | Interfaz web opcional: API REST y una página en un solo archivo, sin librerías de JavaScript, con historial de conversaciones |
 
 ## 3. Decisiones técnicas
 
@@ -208,14 +208,19 @@ intercambios, no los resultados de las herramientas, para que el costo por pregu
 sin límite; y el prompt le pide usar esa memoria solo para entender a qué se refiere el
 usuario, volviendo a consultar las herramientas para los datos. En la consola la memoria dura
 la sesión (`nueva` la reinicia); en la web la guarda el navegador y la envía en cada pregunta,
-así que el servidor no guarda estado y varios usuarios no se mezclan.
+así que el servidor no guarda estado y varios usuarios no se mezclan. La web conserva además
+un historial de conversaciones con su fecha (en el almacenamiento local del navegador): se
+pueden reabrir y continuar, y borrar cuando se quiera.
 
 **Interfaz web con FastAPI y una página propia, no Streamlit.** Es opcional: la consola
 cumple el requisito. Se eligió FastAPI porque se puede probar con tests automáticos sin
 llamar a la API (con un agente simulado) y deja una API REST reutilizable
 (`POST /api/preguntar`, documentada en `/api/docs`). La página es un solo archivo HTML sin
-librerías externas. La web no agrega lógica: llama al mismo `ProjectAgent.ask()` y muestra
-la respuesta, las fuentes, la trazabilidad paso a paso y el consumo. Escucha solo en
+librerías de JavaScript; solo carga dos tipografías de Google Fonts y, sin conexión, usa las
+del sistema. Está pensada como herramienta de trabajo: una sola familia tipográfica, un único
+color de acento, contraste de texto de al menos 4,5:1 en modo claro y oscuro, y diseño
+adaptado a pantallas pequeñas. La web no agrega lógica: llama al mismo `ProjectAgent.ask()` y
+muestra la respuesta, las fuentes, la trazabilidad paso a paso y el consumo. Escucha solo en
 `127.0.0.1`, y el texto del modelo se escapa antes de convertir su markdown a HTML, para que
 no pueda inyectar código en la página. Si se agota la cuota o el modelo está saturado,
 muestra un mensaje claro en lugar de fallar.
@@ -264,7 +269,7 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
 
 ## 5. Validación
 
-- **Tests automáticos** (`python -m pytest`, 106 tests, sin consumir API; se ejecutan en
+- **Tests automáticos** (`python -m pytest`, 107 tests, sin consumir API; se ejecutan en
   GitHub Actions en Linux y Windows con cada push): lectura de PDF y
   Word, limpieza de tablas, secciones, búsqueda, base de datos, barreras del SQL, bucle del
   agente con el modelo simulado, memoria de conversación, cadena de modelos de respaldo,
@@ -311,8 +316,8 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
   ajustes.
 - **SQL**: se rechaza cualquier consulta que contenga `;`, aunque esté dentro de un texto.
 - **Memoria de conversación limitada**: recuerda los últimos 6 intercambios (preguntas y
-  respuestas, no los resultados de las herramientas). En la web se pierde al recargar la
-  página.
+  respuestas, no los resultados de las herramientas). El historial de la web vive solo en el
+  navegador donde se usó: no se comparte entre equipos y se pierde si se borran sus datos.
 - **Extracción no determinista**: regenerar una ficha puede producir redacciones distintas;
   la verificación de cifras y los tests de fidelidad acotan ese riesgo.
 - **Informes modificados**: la detección automática es por archivo nuevo. Si se reemplaza el
