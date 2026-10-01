@@ -254,7 +254,7 @@ Las cuatro fichas generadas están en [`data/fichas/`](data/fichas/).
 
 ## 5. Validación
 
-- **Tests automáticos** (`python -m pytest`, 98 tests, sin consumir API; se ejecutan en
+- **Tests automáticos** (`python -m pytest`, 100 tests, sin consumir API; se ejecutan en
   GitHub Actions en Linux y Windows con cada push): lectura de PDF y
   Word, limpieza de tablas, secciones, búsqueda, base de datos, barreras del SQL, bucle del
   agente con el modelo simulado, memoria de conversación, cadena de modelos de respaldo,

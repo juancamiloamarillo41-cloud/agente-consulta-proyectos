@@ -107,3 +107,35 @@ def test_unsupported_format_is_rejected(tmp_path):
     path.write_text("hola", encoding="utf-8")
     with pytest.raises(ValueError, match="Formato no soportado"):
         load_document(path)
+
+
+@pytest.mark.parametrize("use_heading_styles", [True, False], ids=["estilos-de-titulo", "titulos-en-negrita"])
+def test_real_report_as_word_matches_the_pdf(tmp_path, documents, use_heading_styles):
+    # El enunciado anuncia el informe de la Clínica en Word, pero se entregó en PDF. Se reconstruye
+    # como .docx con su contenido real, en las dos formas habituales de marcar títulos, y se exige
+    # que el lector de Word produzca las mismas secciones y tablas que el de PDF.
+    pdf = documents["PC-2025-033"]
+    document = docx.Document()
+    for block in pdf.blocks:
+        if block.kind == "heading" and use_heading_styles:
+            document.add_heading(block.text, level=block.level)
+        elif block.kind == "heading":
+            document.add_paragraph().add_run(block.text).bold = True
+        elif block.kind == "table":
+            rows = [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in block.text.splitlines()]
+            rows = [row for row in rows if not all(set(cell) <= {"-"} for cell in row)]
+            table = document.add_table(rows=len(rows), cols=len(rows[0]))
+            for i, row in enumerate(rows):
+                for j, value in enumerate(row):
+                    table.cell(i, j).text = value
+        else:
+            document.add_paragraph(block.text)
+    path = tmp_path / "Informe_Cierre_PC-2025-033_Clinica_Santa_Lucia.docx"
+    document.save(path)
+
+    word_chunks = split_into_chunks(load_document(path))
+    pdf_chunks = split_into_chunks(pdf)
+    assert [c.section for c in word_chunks] == [c.section for c in pdf_chunks]
+    results = next(c for c in word_chunks if c.section == "6. Resultados")
+    assert "| Tiempo total de espera del paciente | 52 min | reducción ≥ 20% | 39,5 min | -24% |" in results.text
+    assert "constituye el dato oficial de cierre" in results.text
