@@ -328,21 +328,6 @@ cada pregunta, así que el consumo real debería quedar algo por debajo.
 | gemini-3.6/3.7/3.8-flash (precio desde 2027) | USD 1,50 / 7,50 | USD 0,032 | ≈ USD 347 |
 | gemini-2.5-flash (solo cuentas que aún lo tienen habilitado) | USD 0,30 / 2,50 | USD 0,008 | ≈ USD 85 |
 
-- **Rango razonable: USD 85 a 370 al mes** (entre USD 1,70 y 7,40 por consultor), según el
-  modelo. Si el uso real fuera de 20 preguntas diarias por consultor, el costo se duplica.
-- **Extracción de fichas** (estimado, no medido): unos 6.000 tokens de entrada y 4.000 de
-  salida por informe; menos de USD 0,05 por informe. Procesar 100 informes nuevos al año cuesta menos de USD 5.
-- **Infraestructura:** SQLite y la búsqueda BM25 corren localmente, sin servicios adicionales
-  (ni base vectorial ni embeddings). Para un despliegue compartido bastaría una máquina
-  virtual pequeña (≈ USD 10-30 al mes).
-- **La capa gratuita no alcanza para este uso:** unas 20 peticiones al día por modelo, es
-  decir, unas 6 preguntas diarias por modelo para toda la firma.
-- **Cómo reducirlo:** el prefijo repetido (prompt y esquema) se beneficia del caché de
-  contexto de Gemini (USD 0,075 por 1M tokens cacheados, frente a 0,75-1,50); limitar a 3
-  los fragmentos devueltos por búsqueda; usar `gemini-2.5-flash` para preguntas simples de
-  SQL. No se recomienda bajar a modelos "lite": en la validación atribuyeron cifras a
-  indicadores equivocados.
-
 ## 9. Estructura del repositorio
 
 ```text
